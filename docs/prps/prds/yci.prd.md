@@ -151,8 +151,12 @@ A `yci` release is successful when:
   customer's) pipeline.
 - **No in-repo customer data.** No customer names, credentials, IPs,
   configs ever committed to `yandy-r/claude-plugins`. Customer profiles
-  live **outside** the repo — in `~/.config/yci/profiles/` or similar —
-  and are loaded at runtime.
+  live **outside** the repo — in `$YCI_DATA_ROOT` (default
+  `~/.config/yci/`) — and are loaded at runtime.
+- **No hardcoded data-root path.** `~/.config/yci/` is the _default_; the
+  actual root is configurable per operator. Per-customer paths (for
+  customers who require artifacts in their own Dropbox / OneDrive /
+  GDrive / shared drive) are profile-field overrides — see §5.1.
 
 ## 5. Architecture
 
@@ -193,26 +197,50 @@ claude-plugins/
     └── {yci artifacts}
 ```
 
-**Customer data lives OUTSIDE the repo**:
+**Customer data lives OUTSIDE the repo. The root is configurable.**
+
+**Data-root resolution** (precedence, first match wins):
+
+1. `--data-root <path>` CLI flag (session-scoped, explicit).
+2. `$YCI_DATA_ROOT` env var (session-scoped).
+3. Default: `~/.config/yci/`.
+
+The resolved root contains the stock layout below. Every subtree is
+**also** overridable per-customer via the profile (see §5.2) for the
+common consulting case where a customer mandates "artifacts must land in
+this Dropbox folder" or "vault lives in 1Password, not on disk."
 
 ```
-~/.config/yci/
+$YCI_DATA_ROOT/               # default ~/.config/yci/
 ├── profiles/
-│   ├── acme-healthcare.yaml         # profile config (non-secret)
+│   ├── acme-healthcare.yaml  # profile config (non-secret)
 │   ├── bigbank-cdc.yaml
 │   ├── widgetco.yaml
+│   ├── _internal.yaml        # stock homelab/internal profile
 │   └── _template.yaml
+├── state.json                # active profile + MRU history
 ├── vaults/
-│   ├── acme-healthcare/             # secrets (gitignored / mode 600)
-│   ├── bigbank-cdc/
-│   └── widgetco/
+│   └── {customer}/...        # default secrets store (mode 0700)
 ├── inventories/
-│   └── {customer}/...               # cached CMDB / device lists
+│   └── {customer}/...        # default CMDB/device cache
 ├── calendars/
-│   └── {customer}/...               # change-window sources
+│   └── {customer}/...        # default change-window sources
 └── artifacts/
-    └── {customer}/{engagement}/...  # generated deliverables
+    └── {customer}/{engagement}/{timestamp}-{type}/   # default deliverables
 ```
+
+**Per-customer overrides** (profile fields — see §5.2): each of
+`vaults`, `inventories`, `calendars`, `deliverable` may specify a `path`
+pointing anywhere — including a mounted cloud folder
+(`~/Dropbox-Acme/`, `~/OneDrive-Bank/`, `~/gdrive/`, an rclone mount),
+a shared network drive, or a separate encrypted volume. The paths are
+**resolved at skill runtime, not at scaffold time**, so profile-swap
+transparently relocates where output lands.
+
+**Upload adapters** (`dropbox://`, `gdrive://`, `onedrive://`, `s3://`)
+for direct-to-cloud upload are **deferred** to Phase 3 or later. For
+Phase 0-2, the pragmatic pattern is "write to a local path; let the OS
+sync it" via the desktop client each cloud provider ships.
 
 ### 5.2 Customer Profile (the load-bearing primitive)
 
@@ -250,16 +278,27 @@ inventory:
   adapter: netbox
   endpoint: https://netbox.example-internal.acme/api
   credential_ref: acme-healthcare/netbox-token
+  path: ~/Dropbox-Acme/inventories/ # optional override (default: $YCI_DATA_ROOT/inventories/acme-healthcare/)
 
 approval:
   adapter: servicenow
   endpoint: https://acme.service-now.com/api
   credential_ref: acme-healthcare/snow
 
+vaults:
+  path: onepassword://acme-vault # optional override (default: $YCI_DATA_ROOT/vaults/acme-healthcare/)
+
 deliverable:
   format: [markdown, pdf]
   header_template: ~/.config/yci/branding/acme-header.md # required
   handoff_format: git-repo # git-repo|zip|confluence|pdf-bundle
+  path: ~/Dropbox-Acme/deliverables/ # OPTIONAL override (default: $YCI_DATA_ROOT/artifacts/acme-healthcare/)
+  # Common consulting patterns for `path`:
+  #   ~/Dropbox-Acme/deliverables/        # Dropbox desktop-synced
+  #   ~/OneDrive-Acme/deliverables/       # OneDrive desktop-synced
+  #   ~/gdrive/Acme/deliverables/         # rclone or Google Drive for Desktop
+  #   /Volumes/Acme-NAS/deliverables/     # shared network drive
+  #   ~/Encrypted-Customers/acme/         # separate encrypted volume
 
 vendor_tooling:
   - { vendor: cisco, product: ios-xe, version: '17.9' }
@@ -678,18 +717,39 @@ whose MCP is already production-ready.
 
 ### 11.9 Customer-data-at-rest location
 
-**Default**: `~/.config/yci/` — per-user, outside any git repo, mode 0700. Profiles are YAML (non-secret); vaults are encrypted at rest
+**Default root**: `~/.config/yci/` — per-user, outside any git repo,
+mode 0700. Profiles are YAML (non-secret); vaults are encrypted at rest
 (recommend `age` or `sops`).
 
-**Override if**: you want customer data on an encrypted USB, a
-per-customer VM, or a cloud keystore.
+**Data-root resolution** (§5.1 precedence): `--data-root <path>` CLI
+flag > `$YCI_DATA_ROOT` env var > default `~/.config/yci/`.
+
+**Per-customer overrides** (profile YAML): `vaults.path`,
+`inventories.path`, `calendars.path`, `deliverable.path` each override
+the corresponding default subtree. Lets customers mandate
+"secrets in 1Password, not on disk" or "artifacts in this Dropbox
+folder" without changing the global root.
 
 ### 11.10 Deliverable output location
 
-**Default**: `~/.config/yci/artifacts/{customer}/{engagement}/{timestamp}-{type}/`
+**Default**:
+`$YCI_DATA_ROOT/artifacts/{customer}/{engagement}/{timestamp}-{type}/`
+(where `$YCI_DATA_ROOT` is the resolved data root per §11.9).
 
-**Override if**: you already have a customer-docs folder convention
-on disk or in cloud storage.
+**Per-customer override**: set `deliverable.path` in the profile to
+_any_ path — common consulting patterns:
+
+- `~/Dropbox-Acme/deliverables/` (Dropbox desktop-synced)
+- `~/OneDrive-Bank/deliverables/` (OneDrive desktop-synced)
+- `~/gdrive/Acme/deliverables/` (Google Drive for Desktop / rclone)
+- `/Volumes/Acme-NAS/deliverables/` (shared network drive)
+- `~/Encrypted-Customers/acme/` (separate encrypted volume)
+
+**Upload adapters (`dropbox://`, `gdrive://`, `onedrive://`, `s3://`)**
+are deferred to Phase 3+. For Phase 0-2, rely on the OS-level cloud
+sync client each provider ships — `yci` writes to the local path; the
+OS syncs. This keeps `yci` out of credential-management for cloud
+storage and avoids provider-API breakage.
 
 ## 12. Residual Questions — Resolved
 
