@@ -326,11 +326,253 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# customer-guard hook checks
+# ---------------------------------------------------------------------------
+validate_customer_guard_hook() {
+    echo "--- customer-guard hook ---"
+
+    local plugin_json="${REPO_ROOT}/yci/.claude-plugin/plugin.json"
+    local hook_json="${REPO_ROOT}/yci/hooks/customer-guard/hook.json"
+    local hook_scripts_dir="${REPO_ROOT}/yci/hooks/customer-guard/scripts"
+
+    # 1. plugin.json has hooks key pointing at hook.json
+    if python3 -c "
+import json, sys, os
+plugin_root = '${REPO_ROOT}/yci'
+with open('${plugin_json}') as f: data = json.load(f)
+hooks = data.get('hooks')
+if not hooks:
+    sys.stderr.write('plugin.json: missing or empty hooks key\n'); sys.exit(1)
+if isinstance(hooks, str):
+    target = os.path.join(plugin_root, hooks)
+    if not os.path.isfile(target):
+        sys.stderr.write(f'plugin.json: hooks key points to missing file: {target}\n'); sys.exit(1)
+" 2>/dev/null; then
+        ok "plugin.json hooks key present and resolves"
+    else
+        fail "plugin.json: missing or empty hooks key, or hooks file not found"
+    fi
+
+    # 2. hook.json exists, parses, references pretool.sh
+    if [ ! -f "$hook_json" ]; then
+        fail "hook.json missing"
+        return
+    fi
+    python3 -m json.tool "$hook_json" > /dev/null 2>&1 || fail "hook.json: invalid JSON"
+    if grep -q 'pretool.sh' "$hook_json"; then
+        ok "hook.json present, parses, references pretool.sh"
+    else
+        fail "hook.json: does not reference pretool.sh"
+    fi
+
+    # 3. Scripts: pretool.sh (runnable) and decision-json.sh (sourceable, non-executable)
+    local -a hook_scripts=(pretool.sh decision-json.sh)
+    local -a hook_safety_exempt=(decision-json.sh)
+    for s in "${hook_scripts[@]}"; do
+        local p="${hook_scripts_dir}/${s}"
+        local exempt=0
+        for ex in "${hook_safety_exempt[@]}"; do [ "$s" = "$ex" ] && exempt=1; done
+        if ! [ -f "$p" ]; then
+            fail "hook script ${s}: missing"
+            continue
+        fi
+        if ! head -1 "$p" | grep -q '^#!/usr/bin/env bash'; then
+            fail "hook script ${s}: wrong shebang (expected #!/usr/bin/env bash)"
+            continue
+        fi
+        if ! [ -x "$p" ]; then
+            fail "hook script ${s}: not executable"
+            continue
+        fi
+        if [ "$exempt" -eq 1 ]; then
+            # Sourceable library: executable, but MUST NOT self-enable set -euo pipefail at file scope.
+            if head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+                fail "hook script ${s}: sourceable library must not self-enable set -euo pipefail"
+            else
+                ok "hook script ${s} (sourceable library): executable, shebang, no set -euo at file scope"
+            fi
+        else
+            # Runnable: must be executable, must have set -euo pipefail
+            if ! head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+                fail "hook script ${s}: missing 'set -euo pipefail' in first 20 lines"
+            else
+                ok "hook script ${s}: executable, shebang, set -euo pipefail"
+            fi
+        fi
+    done
+
+    # 4a. References: error-messages.md
+    local em="${REPO_ROOT}/yci/hooks/customer-guard/references/error-messages.md"
+    if [ ! -s "$em" ]; then
+        fail "error-messages.md missing/empty"
+    else
+        local n
+        n="$(grep -c '^### ' "$em")"
+        if [ "$n" -ge 6 ]; then
+            ok "error-messages.md has $n catalog entries"
+        else
+            fail "error-messages.md: $n entries (need >=6)"
+        fi
+    fi
+
+    # 4b. References: capability-gaps.md
+    local cg="${REPO_ROOT}/yci/hooks/customer-guard/references/capability-gaps.md"
+    if [ -s "$cg" ]; then
+        ok "capability-gaps.md present and non-empty"
+    else
+        fail "capability-gaps.md missing or empty"
+    fi
+
+    # 4c. Codex advisory stub
+    local codex_stub="${REPO_ROOT}/yci/hooks/customer-guard/targets/codex/codex-config-fragment.toml"
+    if [ ! -f "$codex_stub" ]; then
+        fail "codex advisory stub missing"
+    else
+        local first
+        first="$(grep -v '^[[:space:]]*$' "$codex_stub" | head -1)"
+        case "$first" in
+            '# Advisory only'*) ok "codex stub starts with '# Advisory only'" ;;
+            *)                   fail "codex stub first non-blank line does not start with '# Advisory only'" ;;
+        esac
+    fi
+
+    # 5. Integration tests (task 6.1 — guard if not yet present)
+    local hook_tests_dir="${REPO_ROOT}/yci/hooks/customer-guard/tests"
+    if [ -x "${hook_tests_dir}/run-all.sh" ]; then
+        printf '\n--- customer-guard integration tests ---\n'
+        if bash "${hook_tests_dir}/run-all.sh"; then
+            ok "customer-guard integration tests pass"
+        else
+            fail "customer-guard integration tests failed"
+        fi
+    else
+        warn "customer-guard integration tests not yet present (task 6.1)"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# customer-isolation library checks
+# ---------------------------------------------------------------------------
+validate_customer_isolation_lib() {
+    echo "--- customer-isolation library ---"
+
+    local lib_root="${REPO_ROOT}/yci/skills/_shared/customer-isolation"
+    local lib_scripts_dir="${lib_root}/scripts"
+    local lib_tests_dir="${lib_root}/tests"
+
+    # 1. Python scripts compile
+    local py
+    for py in "${lib_scripts_dir}"/*.py; do
+        [ -f "$py" ] || continue
+        if python3 -m py_compile "$py" 2>/dev/null; then
+            ok "$(basename "$py") compiles"
+        else
+            fail "$(basename "$py"): py_compile failed"
+        fi
+    done
+
+    # 2. Shell scripts: shebang check; path-match.sh and allowlist.sh are
+    #    sourceable libraries (non-executable, no set -euo at file scope).
+    local -a lib_sh_scripts=(path-match.sh allowlist.sh)
+    local -a lib_safety_exempt=(path-match.sh allowlist.sh)
+    for s in "${lib_sh_scripts[@]}"; do
+        local p="${lib_scripts_dir}/${s}"
+        local exempt=0
+        for ex in "${lib_safety_exempt[@]}"; do [ "$s" = "$ex" ] && exempt=1; done
+        if ! [ -f "$p" ]; then
+            fail "lib script ${s}: missing"
+            continue
+        fi
+        if ! head -1 "$p" | grep -q '^#!/usr/bin/env bash'; then
+            fail "lib script ${s}: wrong shebang (expected #!/usr/bin/env bash)"
+            continue
+        fi
+        if ! [ -x "$p" ]; then
+            fail "lib script ${s}: not executable"
+            continue
+        fi
+        if [ "$exempt" -eq 1 ]; then
+            if head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+                fail "lib script ${s}: sourceable library must not self-enable set -euo pipefail"
+            else
+                ok "lib script ${s} (sourceable library): executable, shebang, no set -euo at file scope"
+            fi
+        else
+            if ! head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+                fail "lib script ${s}: missing 'set -euo pipefail' in first 20 lines"
+            else
+                ok "lib script ${s}: executable, shebang, set -euo pipefail"
+            fi
+        fi
+    done
+
+    # 3. detect.sh sources cleanly and exports isolation_check_payload
+    #    (detect.sh resolves helpers from CLAUDE_PLUGIN_ROOT or YCI_ROOT)
+    local yci_plugin_root
+    yci_plugin_root="$(cd "${lib_root}/../../.." && pwd -P)"
+    if bash -c "export YCI_ROOT='${yci_plugin_root}'; source '${lib_root}/detect.sh' 2>/dev/null && declare -F isolation_check_payload > /dev/null"; then
+        ok "detect.sh sources and exports isolation_check_payload"
+    else
+        fail "detect.sh: source failed OR isolation_check_payload not exported"
+    fi
+
+    # 4. fingerprint-rules.md present and non-empty
+    local fp_rules="${lib_root}/references/fingerprint-rules.md"
+    if [ -s "$fp_rules" ]; then
+        ok "fingerprint-rules.md present and non-empty"
+    else
+        fail "fingerprint-rules.md missing/empty"
+    fi
+
+    # 5. Unit tests (task 4.1 — required)
+    if [ -x "${lib_tests_dir}/run-all.sh" ]; then
+        printf '\n--- customer-isolation unit tests ---\n'
+        if bash "${lib_tests_dir}/run-all.sh"; then
+            ok "customer-isolation unit tests pass"
+        else
+            fail "customer-isolation unit tests failed"
+        fi
+    else
+        fail "customer-isolation tests/run-all.sh missing or not executable"
+    fi
+
+    # 6. shellcheck — covers both hook scripts and isolation-lib scripts
+    printf '\n--- shellcheck (customer-guard + customer-isolation) ---\n'
+    if command -v shellcheck >/dev/null 2>&1; then
+        local sc_files=()
+        # hook scripts
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${REPO_ROOT}/yci/hooks/customer-guard/scripts/"*.sh 2>/dev/null)
+        # isolation lib shell scripts
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${lib_scripts_dir}"/*.sh 2>/dev/null)
+        # detect.sh
+        sc_files+=("${lib_root}/detect.sh")
+        # test files
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${lib_tests_dir}/run-all.sh" "${lib_tests_dir}/helpers.sh" \
+                    "${lib_tests_dir}/"test_*.sh 2>/dev/null)
+
+        if shellcheck --severity=warning "${sc_files[@]}"; then
+            ok "shellcheck clean on ${#sc_files[@]} files"
+        else
+            fail "shellcheck reported warnings/errors"
+        fi
+    else
+        warn "shellcheck not installed — skipping"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 main() {
     echo "=== validate-yci-skills.sh ==="
     validate_hello_skill
     echo
     validate_customer_profile_skill
+    echo
+    validate_customer_guard_hook
+    echo
+    validate_customer_isolation_lib
     echo
 
     if [ "$ERRORS" -eq 0 ]; then

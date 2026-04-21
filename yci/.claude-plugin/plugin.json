@@ -4,5 +4,6 @@
   "description": "Yandy's Claude Infrastructure toolkit — consulting / systems-integration workflows. Phase 0 scaffolding.",
   "author": {
     "name": "yandy-r"
-  }
+  },
+  "hooks": "hooks/customer-guard/hook.json"
 }

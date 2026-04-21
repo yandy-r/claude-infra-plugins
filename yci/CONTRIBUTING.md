@@ -253,6 +253,24 @@ phase is defined in PRD §6. The phased rollout plan is in PRD §9.
 Adding a hook, adapter, or skill to Phase 0 is a scope defect, not a
 contribution. Open an issue and target the appropriate later phase instead.
 
+### Guard-hook discipline
+
+The `yci` customer-guard PreToolUse hook (`yci/hooks/customer-guard/`) is a
+load-bearing security control. Operator-facing setup and false-positive triage
+are documented in [`yci/hooks/customer-guard/README.md`](hooks/customer-guard/README.md).
+
+Contributors MUST NOT:
+
+1. Add a default-relaxed code path (allow-by-default is non-negotiably out of
+   scope per yci PRD §10 #1).
+2. Bypass the hook by short-circuiting the detection library in callers; if
+   a legitimate cross-reference is needed, it is expressed in the operator's
+   per-tenant `<data-root>/profiles/<active>.allowlist.yaml` with a mandatory
+   `note:` citing the SOW or ticket authorizing it.
+3. Silently swallow guard errors. The load-bearing contract is "clear
+   actionable error" — every deny message routes through the catalogued
+   error IDs in `yci/hooks/customer-guard/references/error-messages.md`.
+
 ---
 
 ## Related References

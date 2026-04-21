@@ -1,0 +1,26 @@
+customer:
+  id: bigbank
+  display_name: 'Big Bank'
+engagement:
+  id: bigbank-eng
+  type: implementation
+  sow_ref: SOW-0002
+  scope_tags: [test]
+  start_date: '2026-01-01'
+  end_date: '2026-12-31'
+compliance:
+  regime: commercial
+  evidence_schema_version: 1
+inventory:
+  adapter: file
+  path: inventories/bigbank
+approval:
+  adapter: github-pr
+deliverable:
+  format: [markdown]
+  header_template: /tmp/header.md
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn

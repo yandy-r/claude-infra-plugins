@@ -1,0 +1,8 @@
+# Advisory only — Codex hooks under development; see capability-gaps.md for status.
+#
+# This file is a reservation marker: when Codex's `features.codex_hooks` GAs
+# (per the ycc target-capability-matrix, this is currently `unsupported`), this
+# fragment will be promoted to a real TOML config snippet wiring
+# `pretool.sh` to the PreToolUse-equivalent event.
+#
+# yci refuses to fabricate config for an unsupported target.
