@@ -1,0 +1,8 @@
+# HIPAA PHI-shaped patterns (supplement core sanitizer; not clinical advice).
+# Format: RE:<Python regex>
+
+NAME:ssn
+RE:\b\d{3}-\d{2}-\d{4}\b
+
+NAME:mrn_like
+RE:\bMRN\s*[:#]?\s*\d{6,12}\b

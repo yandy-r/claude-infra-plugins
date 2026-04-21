@@ -167,6 +167,32 @@ skills as soon as the directory exists and is wired into the active profile's
 
 ---
 
+## Telemetry sanitizer (cross-customer redaction)
+
+Skills and hooks that write customer-scoped artifacts should run text through
+the shared helper under
+`yci/skills/_shared/telemetry-sanitizer/` before the bytes hit disk (or before
+content is pasted into repo-tracked files).
+
+- **`scripts/sanitize-output.sh`** — resolves the active customer profile,
+  loads `compliance.regime`, merges adapter `*-redaction.rules` (for example
+  `yci/skills/_shared/compliance-adapters/hipaa/phi-redaction.rules`), reads
+  **stdin**, writes redacted text to **stdout**. Override mode with
+  `YCI_SANITIZER_MODE=internal` only for vetted internal flows (same semantics
+  as the Python `--mode internal`: skips strict cross-customer FQDN heuristics).
+- **`scripts/pre-write-artifact.sh`** — same resolution path; reads **stdin**
+  as the artifact body and writes the sanitized result to the path given by
+  **`--output`**. Optional **`--meta-file`** supplies YAML frontmatter for
+  gating: cross-customer relaxed redaction (`--mode internal` in the Python
+  core) is allowed **only** when **`YCI_INTERNAL_CROSS_CUSTOMER_OK=1`** and the
+  meta file contains a line exactly: `customer: _internal`.
+
+Do not bypass the sanitizer for customer deliverables. For deliberate
+multi-customer internal runbooks, use the `_internal` label and env flag
+above — never relax redaction for normal customer engagements.
+
+---
+
 ## Customer-Data-Outside-Repo Rule
 
 Customer data must never enter the `yandy-r/claude-plugins` git repository.
