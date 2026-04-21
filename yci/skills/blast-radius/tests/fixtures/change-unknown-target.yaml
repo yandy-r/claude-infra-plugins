@@ -1,0 +1,7 @@
+change_id: WIDGET-CR-2026-0421-C
+change_type: replace
+summary: Replace failed NIC on phantom device.
+targets:
+  - kind: device
+    id: dc9-phantom-99
+    rationale: device does not exist in inventory

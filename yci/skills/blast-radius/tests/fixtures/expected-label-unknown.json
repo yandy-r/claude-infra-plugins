@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "change_id": "WIDGET-CR-2026-0421-C",
+  "customer": "widget-corp",
+  "inventory_adapter": "file",
+  "inventory_source_fingerprint": "sha256:e3d4193514f13eaa97fcb8d60ceb50857d82388c65ad897c9e4d9e7dc40dca1f",
+  "generated_at": "2026-04-21T00:00:00Z",
+  "tenants": [],
+  "services": [],
+  "direct_devices": [],
+  "dependencies": [],
+  "downstream_consumers": [],
+  "rto_band": "unknown",
+  "confidence": "low",
+  "coverage_gaps": [
+    {
+      "kind": "unknown-device",
+      "detail": "device 'dc9-phantom-99' referenced by change but not in inventory"
+    }
+  ]
+}

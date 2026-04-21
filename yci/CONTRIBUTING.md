@@ -260,6 +260,46 @@ non-ambiguous: either both are present or neither is.
 
 ---
 
+## Inventory-Adapter Pattern
+
+Inventories are adapter-shaped for the same reasons as compliance regimes
+(PRD §4). The skill code never assumes NetBox, Nautobot, ServiceNow CMDB, or
+any other source of truth; the active profile's `inventory.adapter` field
+names the adapter, and the adapter translates the source's native shape into
+the normalized inventory JSON that downstream workflow skills consume.
+
+### Directory Layout
+
+Inventory adapter implementations live under
+`yci/skills/_shared/inventory-adapters/<name>/`. Phase 0 ships the `file`
+adapter inline (at `yci/skills/blast-radius/scripts/adapter-file.sh`) and a
+`netbox/ADAPTER.md` interface-only stub. When a second adapter ships, the
+`file` adapter moves to `_shared/inventory-adapters/file/` and the skill-local
+invocation is replaced by a generic dispatcher.
+
+### Interface Contract
+
+Any inventory adapter MUST:
+
+1. Emit a single JSON object to stdout matching
+   [`yci/skills/blast-radius/references/file-adapter-layout.md`](skills/blast-radius/references/file-adapter-layout.md)
+   §"Normalization output" — keys: `adapter, root, tenants, services, devices,
+sites, dependencies`.
+2. Honour the catalogued exit codes (0 success, 1 source/path problem,
+   2 schema violation, 3 runtime error / missing dependency).
+3. Read its configuration from the loaded customer profile fields
+   (`inventory.endpoint`, `inventory.credential_ref`, `inventory.path`) only
+   via arguments passed by the calling skill. Adapters MUST NOT re-read the
+   profile themselves.
+4. Fail closed if any required profile field is missing. Never silently
+   return an empty inventory.
+
+Skills that compose blast-radius (for example `yci:network-change-review`
+P0.5, `yci:mop` P0.6) depend on the normalized JSON shape being stable across
+adapters. Any adapter-specific schema drift is a defect.
+
+---
+
 ## Telemetry sanitizer (cross-customer redaction)
 
 Skills and hooks that write customer-scoped artifacts should run text through

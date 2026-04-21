@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yandy-r.github.io/claude-plugins/yci/blast-radius/label-schema.json",
+  "title": "yci blast-radius label",
+  "description": "Typed output of yci:blast-radius — see references/label-schema.md for the human-readable spec.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "change_id",
+    "customer",
+    "inventory_adapter",
+    "inventory_source_fingerprint",
+    "generated_at",
+    "tenants",
+    "services",
+    "direct_devices",
+    "dependencies",
+    "downstream_consumers",
+    "rto_band",
+    "confidence",
+    "coverage_gaps"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "change_id": { "type": "string", "minLength": 1 },
+    "customer": { "$ref": "#/$defs/customerId" },
+    "inventory_adapter": {
+      "type": "string",
+      "enum": ["file", "netbox", "nautobot", "servicenow-cmdb", "infoblox", "none"]
+    },
+    "inventory_source_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 / ISO-8601 UTC timestamp."
+    },
+    "tenants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" },
+      "uniqueItems": true
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "criticality", "rto_band"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "criticality": { "$ref": "#/$defs/criticality" },
+          "rto_band": { "$ref": "#/$defs/rtoBand" },
+          "owner_tenant": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "direct_devices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "role": { "type": "string", "minLength": 1 },
+          "site": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "type"],
+        "properties": {
+          "from": { "$ref": "#/$defs/id" },
+          "to": { "$ref": "#/$defs/id" },
+          "type": { "$ref": "#/$defs/edgeType" }
+        }
+      }
+    },
+    "downstream_consumers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "distance"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "kind": { "type": "string", "enum": ["service", "tenant"] },
+          "distance": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "rto_band": { "$ref": "#/$defs/rtoBand" },
+    "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+    "coverage_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "unknown-device",
+              "unknown-service",
+              "orphan-edge",
+              "missing-rto",
+              "missing-criticality",
+              "missing-tenant"
+            ]
+          },
+          "detail": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "customerId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "rtoBand": {
+      "type": "string",
+      "enum": ["lt-5m", "5m-1h", "1h-4h", "gt-4h", "unknown"]
+    },
+    "criticality": {
+      "type": "string",
+      "enum": ["tier-1", "tier-2", "tier-3", "tier-4", "unknown"]
+    },
+    "edgeType": {
+      "type": "string",
+      "enum": ["depends-on", "routes-via", "auth-via", "stores-in", "hosts", "peers-with"]
+    }
+  }
+}

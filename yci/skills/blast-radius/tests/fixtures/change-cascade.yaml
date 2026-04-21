@@ -1,0 +1,10 @@
+change_id: WIDGET-CR-2026-0421-B
+change_type: firmware
+summary: Upgrade firmware on both edge routers simultaneously (maintenance window).
+targets:
+  - kind: device
+    id: dc1-edge-01
+    rationale: primary edge path for orders-api
+  - kind: device
+    id: dc1-edge-02
+    rationale: redundant edge path for orders-api

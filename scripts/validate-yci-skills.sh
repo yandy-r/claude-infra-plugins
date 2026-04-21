@@ -639,6 +639,171 @@ validate_customer_isolation_lib() {
 }
 
 # ---------------------------------------------------------------------------
+# blast-radius skill checks
+# ---------------------------------------------------------------------------
+validate_blast_radius_skill() {
+    echo "--- blast-radius skill ---"
+
+    local skill_root="${REPO_ROOT}/yci/skills/blast-radius"
+
+    # 1. Skill root exists
+    if [ ! -d "${skill_root}" ]; then
+        fail "yci/skills/blast-radius/ directory missing"
+        return
+    fi
+    ok "yci/skills/blast-radius/ present"
+
+    # 2. SKILL.md exists with valid frontmatter
+    if [ ! -f "${skill_root}/SKILL.md" ]; then
+        fail "blast-radius/SKILL.md missing"
+    else
+        ok "blast-radius/SKILL.md present"
+        if python3 - "${skill_root}/SKILL.md" <<'PY'; then
+import sys
+import re
+
+try:
+    import yaml
+    def load_frontmatter(text: str) -> dict:
+        m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+        return (yaml.safe_load(m.group(1)) or {}) if m else {}
+except ImportError:
+    def load_frontmatter(text: str) -> dict:
+        m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+        if not m:
+            return {}
+        out: dict = {}
+        for line in m.group(1).splitlines():
+            km = re.match(r"^([a-zA-Z_][a-zA-Z0-9_-]*):\s*(.*)$", line)
+            if not km:
+                continue
+            key, val = km.group(1), km.group(2).strip()
+            if val.startswith(('"', "'")):
+                val = val.strip("\"'")
+            if val.lower() in {"true", "false"}:
+                out[key] = (val.lower() == "true")
+            else:
+                out[key] = val
+        return out
+
+from pathlib import Path
+skill_md = Path(sys.argv[1])
+text = skill_md.read_text(encoding="utf-8")
+script_name = "validate-yci-skills.sh"
+errors: list[str] = []
+
+if not re.match(r"^---\n.*?\n---\n", text, re.DOTALL):
+    errors.append(f"{skill_md}: frontmatter delimiters missing or malformed")
+    for err in errors:
+        print(f"{script_name}: {err}", file=sys.stderr)
+    sys.exit(1)
+
+fm = load_frontmatter(text)
+
+if fm.get("name") != "blast-radius":
+    errors.append(f"{skill_md}: frontmatter 'name' must be 'blast-radius', got {fm.get('name')!r}")
+
+desc = fm.get("description", "")
+if not (isinstance(desc, str) and desc.strip()):
+    errors.append(f"{skill_md}: frontmatter 'description' must be a non-empty string")
+
+tools = fm.get("allowed-tools")
+if not (isinstance(tools, list) and tools):
+    errors.append(f"{skill_md}: frontmatter 'allowed-tools' must be a non-empty list")
+
+if errors:
+    for err in errors:
+        print(f"{script_name}: {err}", file=sys.stderr)
+    sys.exit(1)
+PY
+            ok "blast-radius/SKILL.md frontmatter valid"
+        else
+            fail "blast-radius/SKILL.md: frontmatter invalid"
+        fi
+    fi
+
+    # 3. Required scripts exist and are executable
+    for s in adapter-file.sh reason.sh render-markdown.sh; do
+        local p="${skill_root}/scripts/${s}"
+        if [ -x "$p" ]; then
+            ok "script ${s} present and executable"
+        else
+            fail "script ${s}: missing or not executable"
+        fi
+    done
+
+    # 4. Required reference files exist and are non-empty
+    for ref in label-schema.md label-schema.json change-input-schema.md file-adapter-layout.md error-messages.md; do
+        if [ -s "${skill_root}/references/${ref}" ]; then
+            ok "reference ${ref} present and non-empty"
+        else
+            fail "reference ${ref} missing or empty"
+        fi
+    done
+
+    # 5. label-schema.json parses as valid JSON with JSON Schema $schema declaration
+    local schema_json="${skill_root}/references/label-schema.json"
+    if python3 -c "
+import json, sys
+with open('${schema_json}') as f:
+    doc = json.load(f)
+schema_val = doc.get('\$schema', '')
+if not schema_val.startswith('https://json-schema.org/draft/2020-12/'):
+    sys.stderr.write('label-schema.json: \$schema must start with https://json-schema.org/draft/2020-12/\n')
+    sys.exit(1)
+" 2>/dev/null; then
+        ok "label-schema.json valid JSON with correct \$schema declaration"
+    else
+        fail "label-schema.json: invalid JSON or \$schema not set to https://json-schema.org/draft/2020-12/"
+    fi
+
+    # 6. Tests directory exists with required executable test files
+    local tests_dir="${skill_root}/tests"
+    if [ -x "${tests_dir}/run-all.sh" ]; then
+        ok "tests/run-all.sh present and executable"
+    else
+        fail "tests/run-all.sh missing or not executable"
+    fi
+
+    for t in test_adapter_file.sh test_reason.sh test_render_markdown.sh test_cross_customer_isolation.sh; do
+        if [ -x "${tests_dir}/${t}" ]; then
+            ok "test file ${t} present and executable"
+        else
+            fail "test file ${t}: missing or not executable"
+        fi
+    done
+
+    # 7. shellcheck clean on scripts/*.sh and tests/*.sh
+    printf '\n--- shellcheck (blast-radius) ---\n'
+    if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
+        local sc_files=()
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${skill_root}/scripts/"*.sh 2>/dev/null)
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${tests_dir}/"*.sh 2>/dev/null)
+
+        if [ "${#sc_files[@]}" -eq 0 ]; then
+            warn "shellcheck: no .sh files found yet (skill scripts not yet created)"
+        elif "$SHELLCHECK_BIN" --severity=warning "${sc_files[@]}"; then
+            ok "shellcheck clean on ${#sc_files[@]} files"
+        else
+            fail "shellcheck reported warnings/errors"
+        fi
+    else
+        warn "shellcheck not installed — skipping"
+    fi
+
+    # 8. allowed-tools must contain the Bash allow-list entry verbatim
+    # shellcheck disable=SC2016  # single quotes intentional: literal string for grep -F
+    local allow_entry='Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/*.sh:*)'
+    if grep -qF "${allow_entry}" "${skill_root}/SKILL.md" 2>/dev/null; then
+        ok "SKILL.md allowed-tools contains required Bash allow-list entry"
+    else
+        fail "SKILL.md allowed-tools missing: ${allow_entry}"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # compliance-adapters checks
 # ---------------------------------------------------------------------------
 validate_compliance_adapters() {
@@ -940,6 +1105,8 @@ main() {
     validate_customer_guard_hook
     echo
     validate_customer_isolation_lib
+    echo
+    validate_blast_radius_skill
     echo
     validate_telemetry_sanitizer_lib
     echo

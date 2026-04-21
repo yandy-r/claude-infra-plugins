@@ -1,0 +1,7 @@
+change_id: WIDGET-CR-2026-0421-A
+change_type: config
+summary: Adjust MTU on primary edge router to 9000.
+targets:
+  - kind: device
+    id: dc1-edge-01
+    rationale: primary edge path for orders-api

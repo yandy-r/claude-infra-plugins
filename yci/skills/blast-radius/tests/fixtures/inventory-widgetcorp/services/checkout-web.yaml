@@ -1,0 +1,4 @@
+id: checkout-web
+criticality: tier-1
+rto_band: lt-5m
+owner_tenant: retail-ops

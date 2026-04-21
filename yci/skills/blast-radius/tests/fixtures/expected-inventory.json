@@ -1,0 +1,95 @@
+{
+  "adapter": "file",
+  "root": "<ROOT_DIR>",
+  "tenants": [
+    {
+      "id": "platform",
+      "display_name": "Platform Engineering"
+    },
+    {
+      "id": "retail-ops",
+      "display_name": "Retail Operations"
+    }
+  ],
+  "services": [
+    {
+      "id": "checkout-web",
+      "criticality": "tier-1",
+      "rto_band": "lt-5m",
+      "owner_tenant": "retail-ops"
+    },
+    {
+      "id": "orders-api",
+      "criticality": "tier-1",
+      "rto_band": "5m-1h",
+      "owner_tenant": "retail-ops"
+    },
+    {
+      "id": "payment-gw",
+      "criticality": "tier-2",
+      "rto_band": "1h-4h",
+      "owner_tenant": "platform"
+    }
+  ],
+  "devices": [
+    {
+      "id": "dc1-edge-01",
+      "role": "edge-router",
+      "site": "dc1",
+      "services_hosted": ["orders-api"]
+    },
+    {
+      "id": "dc1-edge-02",
+      "role": "edge-router",
+      "site": "dc1"
+    },
+    {
+      "id": "dc1-spine-01",
+      "role": "spine",
+      "site": "dc1"
+    }
+  ],
+  "sites": [
+    {
+      "id": "dc1",
+      "display_name": "Primary Data Centre (DC1)"
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "checkout-web",
+      "to": "orders-api",
+      "type": "depends-on"
+    },
+    {
+      "from": "orders-api",
+      "to": "payment-gw",
+      "type": "depends-on"
+    },
+    {
+      "from": "orders-api",
+      "to": "dc1-edge-01",
+      "type": "routes-via"
+    },
+    {
+      "from": "orders-api",
+      "to": "dc1-edge-02",
+      "type": "routes-via"
+    },
+    {
+      "from": "dc1-edge-01",
+      "to": "dc1-spine-01",
+      "type": "peers-with"
+    },
+    {
+      "from": "dc1-edge-02",
+      "to": "dc1-spine-01",
+      "type": "peers-with"
+    },
+    {
+      "from": "dc1-edge-01",
+      "to": "orders-api",
+      "type": "hosts"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+edges:
+  - from: checkout-web
+    to: orders-api
+    type: depends-on
+  - from: orders-api
+    to: payment-gw
+    type: depends-on
+  - from: orders-api
+    to: dc1-edge-01
+    type: routes-via
+  - from: orders-api
+    to: dc1-edge-02
+    type: routes-via
+  - from: dc1-edge-01
+    to: dc1-spine-01
+    type: peers-with
+  - from: dc1-edge-02
+    to: dc1-spine-01
+    type: peers-with

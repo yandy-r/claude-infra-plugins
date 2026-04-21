@@ -1,0 +1,5 @@
+id: dc1-edge-01
+role: edge-router
+site: dc1
+services_hosted:
+  - orders-api

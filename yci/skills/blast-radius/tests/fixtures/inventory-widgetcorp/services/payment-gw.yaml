@@ -1,0 +1,4 @@
+id: payment-gw
+criticality: tier-2
+rto_band: 1h-4h
+owner_tenant: platform
