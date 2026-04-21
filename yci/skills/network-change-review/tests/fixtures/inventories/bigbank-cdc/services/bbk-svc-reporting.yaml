@@ -1,0 +1,4 @@
+id: bbk-svc-reporting
+criticality: tier-2
+rto_band: 1h-4h
+owner_tenant: bbk-tenant-nonprod

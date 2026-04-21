@@ -326,6 +326,107 @@ above — never relax redaction for normal customer engagements.
 
 ---
 
+## Keystone workflow: network-change-review
+
+`yci:network-change-review` is the P0.5 keystone skill (PRD §6.1). It composes
+`yci:customer-profile`, `yci:customer-guard` (via the automatic PreToolUse hook),
+`yci:telemetry-sanitizer`, the compliance adapter, `yci:blast-radius`, and — via
+the Agent tool — `ycc:plan` and `ycc:code-review` into a single dual-branded
+deliverable. It is "keystone" because every downstream P0/P1 skill (`yci:mop`,
+`yci:evidence-bundle`, `yci:cab-prep`) either consumes its outputs or follows its
+composition pattern (PRD §5.6, PRD §6.1). Shipping a reliable
+`yci:network-change-review` is the prerequisite for every subsequent workflow skill
+being worth shipping.
+
+### Composition order
+
+The orchestrator (`review.sh`) runs these stages in order:
+
+1. **Profile** — resolve data root, resolve active customer, load profile JSON.
+2. **Guard** (automatic hook) — `yci:customer-guard` intercepts at PreToolUse;
+   `review.sh` does NOT invoke it directly.
+3. **Preflight identifier scan** — walk every other customer's profile under
+   `<data-root>/profiles/`, extract `customer_id`, `hostname_suffix`,
+   `ipv4_ranges`, and grep the raw input for any match. Any hit exits
+   `ncr-cross-customer-leak-detected` immediately — before any parsing.
+4. **Parse** — `parse-change.sh` validates the raw change file (preserving raw
+   identifiers) against `change-input-schema.md` and produces normalized change JSON.
+5. **Rollback** — `derive-rollback.sh` derives the rollback plan; low confidence
+   inserts a `> **WARNING**` callout rather than failing.
+6. **Blast-radius** — `blast-radius/scripts/reason.sh` + `render-markdown.sh`.
+7. **Catalogs** — `build-check-catalogs.sh` produces pre/post-check catalog JSON
+   from the adapter's `evidence-template.md` and `evidence-schema.json`.
+8. **Plan + review** (SKILL layer, before `review.sh`) — run the same cross-customer
+   preflight as `review.sh` (`preflight-cross-customer.sh`), then dispatch
+   `ycc:planner` and `ycc:code-reviewer` in parallel via the Agent tool; pass their
+   outputs with `--change-plan` and `--diff-review` into `review.sh`.
+9. **Render** — `render-evidence-stub.sh` then `render-artifact.sh` assemble the
+   full review markdown in memory.
+10. **Sanitize** — `pre-write-artifact.sh` (strict mode, sanitizer pass 2) runs
+    on the rendered artifact before any byte hits disk.
+11. **Isolation detect** — `customer-isolation/detect.sh` belt-and-suspenders
+    check on the sanitized artifact; `deny` → delete temp file, exit hard.
+12. **Write** — move sanitized artifact to
+    `<data-root>/artifacts/<customer>/network-change-review/<change_id>-<timestamp>/review.md`.
+
+### Cross-plugin boundary rule
+
+From the project `CLAUDE.md`:
+
+> Cross-plugin helper sharing is NOT supported — if `ycc` and `yci` both need
+> the same helper, duplicate it (the duplication cost is low, the coupling cost
+> is high).
+
+`ycc:plan` and `ycc:code-review` are invoked via the Agent tool with
+`subagent_type: "ycc:planner"` / `"ycc:code-reviewer"` — structured prompt in,
+text out. `review.sh` is a `yci` artifact; it cannot and must not `source` or
+`bash` any file from the `ycc/` source tree. The only supported cross-plugin
+channel is the Agent tool, which treats the other plugin's skill as a black box.
+No `ycc` filesystem path is ever embedded in any `yci` script. This boundary
+discipline mirrors the adapter-boundary precedent documented in the
+[Compliance-Adapter Pattern](#compliance-adapter-pattern) section above: `yci`
+defines its own interface and calls `ycc` only through documented,
+runtime-stable channels.
+
+### Dual-branding contract
+
+Every artifact produced by this skill contains a `{{customer_brand_block}}` slot
+populated from the active profile's `deliverable.header_template` AND a
+`{{consultant_brand_block}}` slot populated from
+`yci/skills/network-change-review/references/consultant-brand.md`. Both slots are
+required; a missing customer brand template causes the orchestrator to exit with
+`ncr-branding-template-missing` (exit 6) before any artifact bytes are written.
+There is no fallback for the customer slot — failing loud is correct: a deliverable
+without customer branding is never handoff-ready (PRD §5.6; PRD §4 threat #3,
+inadequate handoff).
+
+### Step 8 / preflight design note
+
+The composition-contract.md originally specified step 6/8 as a sanitizer
+**redaction** pass on the raw input diff. That was changed during implementation:
+the sanitizer's redaction mode destroys identifiers that `parse-change.sh` needs
+(`change_id`, hostnames, IP addresses), rendering the parse step unable to resolve
+targets. The preflight scan is therefore **detect-only** — it walks every other
+customer's profile and greps the raw input for foreign identifiers, failing hard on
+any match. Redaction happens AFTER rendering (step 10, sanitizer pass 2) and the
+belt-and-suspenders isolation check runs AFTER that (step 11). If you modify any of
+these steps, preserve this invariant: **`parse-change.sh` sees raw identifiers;
+output is never written with foreign identifiers.**
+
+### Evidence stub forward-compat
+
+The evidence stub YAML written alongside the artifact
+(`evidence-stub.yaml`, step 9) is forward-compatible with the downstream P0.4
+`yci:evidence-bundle` skill. Field names are 1:1 with
+`_shared/compliance-adapters/commercial/evidence-schema.json` v1. Do NOT rename
+existing fields; only add. A schema version field in the stub allows
+`evidence-bundle` to detect and reject stubs from older revisions.
+
+See `yci/skills/network-change-review/references/composition-contract.md` for the
+authoritative design doc.
+
+---
+
 ## Customer-Data-Outside-Repo Rule
 
 Customer data must never enter the `yandy-r/claude-plugins` git repository.

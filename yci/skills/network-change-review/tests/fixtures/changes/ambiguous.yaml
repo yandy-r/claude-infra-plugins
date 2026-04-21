@@ -1,0 +1,11 @@
+---
+- name: Apply NTP configuration to edge routers
+  hosts: dc1_edge_routers
+  gather_facts: false
+  tasks:
+    - name: Set NTP server
+      ios_config:
+        lines:
+          - ntp server 10.100.0.10
+          - ntp server 10.100.0.11
+        parents: []

@@ -1,0 +1,23 @@
+# Intentional cross-customer fixture — used by test_end_to_end.sh to verify customer-isolation.
+# This diff belongs to customer bigbank-cdc (SOW-BBK-2025-07) but is submitted
+# under YCI_CUSTOMER=widget-corp to simulate an operator accidentally pasting
+# a wrong-customer change. The sanitizer + isolation detector must catch every
+# bigbank-cdc identifier before any artifact is written.
+--- a/configs/bbk-dc2-edge-01.bbk.example.invalid/interfaces.conf
++++ b/configs/bbk-dc2-edge-01.bbk.example.invalid/interfaces.conf
+@@ -8,7 +8,7 @@
+ interface GigabitEthernet0/0/0
+   description upstream-to-dc2-core
+   ip address 10.200.1.5 255.255.255.0
+-  mtu 1500
++  mtu 9000
+   no shutdown
+ !
+ interface GigabitEthernet0/0/1
+@@ -18,5 +18,5 @@
+   description peer-link-to-bbk-dc2-edge-02
+   ip address 10.200.1.1 255.255.255.252
+-  description old-peer-description
++  description bbk-dc2-edge-01-to-bbk-dc2-edge-02
+   no shutdown
+ !

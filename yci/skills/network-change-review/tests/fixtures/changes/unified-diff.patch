@@ -1,0 +1,11 @@
+--- a/configs/dc1-edge-01.wgt.example.invalid/interfaces.conf
++++ b/configs/dc1-edge-01.wgt.example.invalid/interfaces.conf
+@@ -12,7 +12,7 @@
+ interface GigabitEthernet0/0/0
+   description upstream-to-dc1-spine-01
+   ip address 10.100.1.1 255.255.255.0
+-  mtu 1500
++  mtu 9000
+   no shutdown
+ !
+ interface GigabitEthernet0/0/1

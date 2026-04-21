@@ -804,6 +804,210 @@ if not schema_val.startswith('https://json-schema.org/draft/2020-12/'):
 }
 
 # ---------------------------------------------------------------------------
+# network-change-review skill checks
+# ---------------------------------------------------------------------------
+validate_network_change_review_skill() {
+    echo "--- network-change-review skill ---"
+
+    local skill_root="${REPO_ROOT}/yci/skills/network-change-review"
+
+    # 1. Skill root exists
+    if [ ! -d "${skill_root}" ]; then
+        fail "yci/skills/network-change-review/ directory missing"
+        return
+    fi
+    ok "yci/skills/network-change-review/ present"
+
+    # 2. SKILL.md exists with valid frontmatter
+    if [ ! -f "${skill_root}/SKILL.md" ]; then
+        fail "network-change-review/SKILL.md missing"
+    else
+        ok "network-change-review/SKILL.md present"
+        if python3 - "${skill_root}/SKILL.md" <<'PY'; then
+import sys
+import re
+
+try:
+    import yaml
+    def load_frontmatter(text: str) -> dict:
+        m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+        return (yaml.safe_load(m.group(1)) or {}) if m else {}
+except ImportError:
+    def load_frontmatter(text: str) -> dict:
+        m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+        if not m:
+            return {}
+        out: dict = {}
+        for line in m.group(1).splitlines():
+            km = re.match(r"^([a-zA-Z_][a-zA-Z0-9_-]*):\s*(.*)$", line)
+            if not km:
+                continue
+            key, val = km.group(1), km.group(2).strip()
+            if val.startswith(('"', "'")):
+                val = val.strip("\"'")
+            if val.lower() in {"true", "false"}:
+                out[key] = (val.lower() == "true")
+            else:
+                out[key] = val
+        return out
+
+from pathlib import Path
+skill_md = Path(sys.argv[1])
+text = skill_md.read_text(encoding="utf-8")
+script_name = "validate-yci-skills.sh"
+errors: list[str] = []
+
+if not re.match(r"^---\n.*?\n---\n", text, re.DOTALL):
+    errors.append(f"{skill_md}: frontmatter delimiters missing or malformed")
+    for err in errors:
+        print(f"{script_name}: {err}", file=sys.stderr)
+    sys.exit(1)
+
+fm = load_frontmatter(text)
+
+if fm.get("name") != "network-change-review":
+    errors.append(f"{skill_md}: frontmatter 'name' must be 'network-change-review', got {fm.get('name')!r}")
+
+desc = fm.get("description", "")
+if not (isinstance(desc, str) and desc.strip()):
+    errors.append(f"{skill_md}: frontmatter 'description' must be a non-empty string")
+
+if "argument-hint" not in fm:
+    errors.append(f"{skill_md}: frontmatter 'argument-hint' missing")
+
+tools = fm.get("allowed-tools")
+if not (isinstance(tools, list) and tools):
+    errors.append(f"{skill_md}: frontmatter 'allowed-tools' must be a non-empty list")
+
+if errors:
+    for err in errors:
+        print(f"{script_name}: {err}", file=sys.stderr)
+    sys.exit(1)
+PY
+            ok "network-change-review/SKILL.md frontmatter valid"
+        else
+            fail "network-change-review/SKILL.md: frontmatter invalid"
+        fi
+    fi
+
+    # 3. Scripts: shebang, set -euo pipefail, executable, no hardcoded yci/ paths
+    local s
+    for s in build-check-catalogs.sh derive-rollback.sh parse-change.sh \
+              preflight-cross-customer.sh render-artifact.sh render-evidence-stub.sh review.sh; do
+        local p="${skill_root}/scripts/${s}"
+        if ! [ -x "$p" ]; then
+            fail "script ${s}: not executable or missing"
+            continue
+        fi
+        if ! head -1 "$p" | grep -q '^#!/usr/bin/env bash'; then
+            fail "script ${s}: wrong shebang (expected #!/usr/bin/env bash)"
+            continue
+        fi
+        if ! head -40 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+            fail "script ${s}: missing 'set -euo pipefail' in first 40 lines"
+            continue
+        fi
+        # Check for hardcoded yci/ path prefix on executable code lines
+        # (exclude comment lines; allow ${CLAUDE_PLUGIN_ROOT} and BASH_SOURCE references)
+        if grep -v '^[[:space:]]*#' "$p" | grep -qE '[^$\{A-Za-z0-9_\}]yci/|^yci/'; then
+            fail "script ${s}: hardcodes 'yci/' path prefix (use \${CLAUDE_PLUGIN_ROOT} or BASH_SOURCE)"
+        else
+            ok "script ${s}: executable, shebang, set -euo pipefail, no hardcoded yci/ paths"
+        fi
+    done
+
+    # 4. Required reference docs exist
+    for ref in composition-contract.md rollback-derivation.md change-input-schema.md \
+                error-messages.md evidence-stub-schema.md artifact-template.md consultant-brand.md; do
+        if [ -s "${skill_root}/references/${ref}" ]; then
+            ok "reference ${ref} present and non-empty"
+        else
+            fail "reference ${ref} missing or empty"
+        fi
+    done
+
+    # 5. Tests directory
+    local tests_dir="${skill_root}/tests"
+
+    if [ -x "${tests_dir}/run-all.sh" ]; then
+        ok "tests/run-all.sh present and executable"
+    else
+        fail "tests/run-all.sh missing or not executable"
+    fi
+
+    if [ -s "${tests_dir}/helpers.sh" ]; then
+        ok "tests/helpers.sh present"
+    else
+        fail "tests/helpers.sh missing"
+    fi
+
+    local t
+    for t in test_parse_change.sh test_derive_rollback.sh test_build_check_catalogs.sh \
+              test_render_artifact.sh test_render_evidence_stub.sh test_end_to_end.sh; do
+        if [ -f "${tests_dir}/${t}" ]; then
+            ok "test file ${t} present"
+        else
+            fail "test file ${t}: missing"
+        fi
+    done
+
+    for fx_dir in profiles inventories changes; do
+        if [ -d "${tests_dir}/fixtures/${fx_dir}" ]; then
+            ok "tests/fixtures/${fx_dir}/ present"
+        else
+            fail "tests/fixtures/${fx_dir}/ missing"
+        fi
+    done
+
+    # 6. Command and agent registration
+    local review_cmd="${REPO_ROOT}/yci/commands/review.md"
+    if [ -f "$review_cmd" ]; then
+        if python3 - "$review_cmd" <<'PY'; then
+import sys
+import yaml
+src = open(sys.argv[1]).read()
+parts = src.split('---', 2)
+if len(parts) < 3:
+    sys.stderr.write("review.md: missing YAML frontmatter\n"); sys.exit(1)
+fm = yaml.safe_load(parts[1])
+if not isinstance(fm, dict):
+    sys.stderr.write("review.md: frontmatter is not a mapping\n"); sys.exit(1)
+if not fm.get('description'):
+    sys.stderr.write("review.md: description missing or empty\n"); sys.exit(1)
+PY
+            ok "commands/review.md frontmatter valid"
+        else
+            fail "commands/review.md: frontmatter invalid"
+        fi
+    else
+        fail "commands/review.md missing"
+    fi
+
+    local change_reviewer_agent="${REPO_ROOT}/yci/agents/change-reviewer.md"
+    if [ -f "$change_reviewer_agent" ]; then
+        if python3 - "$change_reviewer_agent" <<'PY'; then
+import sys
+import yaml
+src = open(sys.argv[1]).read()
+parts = src.split('---', 2)
+if len(parts) < 3:
+    sys.stderr.write("change-reviewer.md: missing YAML frontmatter\n"); sys.exit(1)
+fm = yaml.safe_load(parts[1])
+if not isinstance(fm, dict):
+    sys.stderr.write("change-reviewer.md: frontmatter is not a mapping\n"); sys.exit(1)
+if not fm.get('description') or not fm.get('name'):
+    sys.stderr.write("change-reviewer.md: description and name are required\n"); sys.exit(1)
+PY
+            ok "agents/change-reviewer.md frontmatter valid"
+        else
+            fail "agents/change-reviewer.md: frontmatter invalid"
+        fi
+    else
+        fail "agents/change-reviewer.md missing"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # compliance-adapters checks
 # ---------------------------------------------------------------------------
 validate_compliance_adapters() {
@@ -1107,6 +1311,8 @@ main() {
     validate_customer_isolation_lib
     echo
     validate_blast_radius_skill
+    echo
+    validate_network_change_review_skill
     echo
     validate_telemetry_sanitizer_lib
     echo

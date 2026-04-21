@@ -1,0 +1,43 @@
+# Synthetic test fixture — NOT real customer data. Widget Corp is a fictional
+# customer used exclusively for yci skill test automation.
+# NEVER commit operational profiles (real customer data) to the repo.
+
+customer:
+  id: widget-corp
+  display_name: 'Widget Corp'
+  sow_ref: 'SOW-WGT-2025-04'
+
+engagement:
+  id: wgt-network-review-2025
+  type: implementation
+  sow_ref: 'SOW-WGT-2025-04'
+  scope_tags: [network, edge-routers, dc1]
+  start_date: 2025-04-01
+  end_date: 2026-03-31
+
+compliance:
+  regime: commercial
+  evidence_schema_version: 1
+
+inventory:
+  adapter: file
+  root: ../../../../blast-radius/tests/fixtures/inventory-widgetcorp
+
+approval:
+  adapter: none
+
+deliverable:
+  format: [markdown]
+  header_template: widget-corp-header.md
+  handoff_format: git-repo
+
+network:
+  hostname_suffix: .wgt.example.invalid
+  ipv4_ranges:
+    - 10.100.0.0/16
+    - 10.101.0.0/16
+
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn

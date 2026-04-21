@@ -1,0 +1,44 @@
+# Synthetic test fixture — NOT real customer data. BigBank CDC is a fictional
+# customer used exclusively for yci skill test automation (cross-customer isolation
+# tests). Do not confuse with any real financial institution.
+# NEVER commit operational profiles (real customer data) to the repo.
+
+customer:
+  id: bigbank-cdc
+  display_name: 'BigBank CDC'
+  sow_ref: 'SOW-BBK-2025-07'
+
+engagement:
+  id: bbk-network-review-2025
+  type: implementation
+  sow_ref: 'SOW-BBK-2025-07'
+  scope_tags: [network, edge-routers, dc2]
+  start_date: 2025-07-01
+  end_date: 2026-06-30
+
+compliance:
+  regime: commercial
+  evidence_schema_version: 1
+
+inventory:
+  adapter: file
+  root: ../../inventories/bigbank-cdc
+
+approval:
+  adapter: none
+
+deliverable:
+  format: [markdown]
+  header_template: bigbank-cdc-header.md
+  handoff_format: git-repo
+
+network:
+  hostname_suffix: .bbk.example.invalid
+  ipv4_ranges:
+    - 10.200.0.0/16
+    - 10.201.0.0/16
+
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn

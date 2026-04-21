@@ -1,0 +1,4 @@
+id: bbk-dc2-edge-02.bbk.example.invalid
+role: edge-router
+site: dc2
+mgmt_ip: 10.200.1.2

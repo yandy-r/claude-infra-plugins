@@ -1,0 +1,4 @@
+id: bbk-svc-wire
+criticality: tier-1
+rto_band: 5m-1h
+owner_tenant: bbk-tenant-prod

@@ -1,0 +1,16 @@
+edges:
+  - from: bbk-svc-wire
+    to: bbk-svc-core-banking
+    type: depends-on
+  - from: bbk-svc-reporting
+    to: bbk-svc-core-banking
+    type: depends-on
+  - from: bbk-svc-core-banking
+    to: bbk-dc2-edge-01.bbk.example.invalid
+    type: routes-via
+  - from: bbk-svc-core-banking
+    to: bbk-dc2-edge-02.bbk.example.invalid
+    type: routes-via
+  - from: bbk-dc2-edge-01.bbk.example.invalid
+    to: bbk-dc2-edge-02.bbk.example.invalid
+    type: peers-with

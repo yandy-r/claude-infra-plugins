@@ -1,0 +1,7 @@
+---
+# Forward step lists multiple identifier keys — parse-change should collect all.
+forward:
+  - device: dc1-edge-01
+    service: svc-api
+reverse:
+  - action: noop

@@ -1,0 +1,4 @@
+id: bbk-svc-core-banking
+criticality: tier-1
+rto_band: lt-5m
+owner_tenant: bbk-tenant-prod

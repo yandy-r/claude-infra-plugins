@@ -1,0 +1,21 @@
+change_id: WIDGET-CR-2026-0421-B
+change_type: config
+summary: Enable OSPF area 0 on dc1-edge-01 uplink toward dc1-spine-01.
+targets:
+  - kind: device
+    id: dc1-edge-01
+    rationale: primary edge router hosting orders-api routing path
+
+forward:
+  - device: dc1-edge-01
+    cli: |
+      router ospf 1
+        network 10.100.1.0 0.0.0.255 area 0
+      !
+
+reverse:
+  - device: dc1-edge-01
+    cli: |
+      router ospf 1
+        no network 10.100.1.0 0.0.0.255 area 0
+      !
