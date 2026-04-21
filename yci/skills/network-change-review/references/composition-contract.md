@@ -81,7 +81,7 @@ in this order.
 
 11. **Populate change-plan and diff-review slots.** Copy `--change-plan` /
     `--diff-review` inputs when provided; otherwise write placeholders. (These files are
-    produced by `ycc:planner` / `ycc:code-reviewer` at the SKILL layer.)
+    produced by `ycc:planner` / `yci:change-reviewer` at the SKILL layer.)
 
 12. **Build check catalogs.** Invoke `scripts/build-check-catalogs.sh` with
     `--adapter-dir` and `--blast-radius-label`. Capture pre-check and post-check JSON
@@ -132,16 +132,16 @@ in this order.
 
 ## Invocation Mechanics by Boundary
 
-| Composed piece                             | Invocation style                                                                                                                                                                                     | Invoked by                                                                                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `yci:customer-profile`                     | Shell scripts: `resolve-customer.sh`, `load-profile.sh`                                                                                                                                              | `review.sh`                                                                                                                             |
-| `yci:customer-guard` (PreToolUse hook)     | Automatic hook intercept; NOT invoked directly                                                                                                                                                       | Claude Code runtime — NOT `review.sh`                                                                                                   |
-| `yci:_shared/customer-isolation/detect.sh` | Shell script sourced and function called                                                                                                                                                             | `review.sh` (step 17 — final belt-and-suspenders negative check)                                                                        |
-| `yci:telemetry-sanitizer`                  | `pre-write-artifact.sh` on the rendered artifact (strict / internal per profile); optional `sanitize-output.sh` for other CLIs — **not** used on the raw `--change` file before parse in `review.sh` | `review.sh` (post-render pass); raw change is scanned in preflight instead of sanitized early                                           |
-| Compliance adapter                         | `_shared/scripts/load-compliance-adapter.sh --export --profile-json-path <path>` + filesystem reads of `evidence-template.md`, `evidence-schema.json`, `handoff-checklist.md` from `YCI_ADAPTER_DIR` | `review.sh` (step 5) and consumed by check-catalog builder (step 12), evidence-stub renderer (step 14), and artifact renderer (step 15) |
-| `yci:blast-radius`                         | Shell scripts: `blast-radius/scripts/reason.sh`, `blast-radius/scripts/render-markdown.sh`                                                                                                           | `review.sh` (after rollback derivation)                                                                                                 |
-| `ycc:plan` (Change Plan section)           | Agent tool with `subagent_type: "ycc:planner"` — prompt in, structured plan text out                                                                                                                 | SKILL.md prompt — NOT `review.sh`                                                                                                       |
-| `ycc:code-review` (Diff Review section)    | Agent tool with `subagent_type: "ycc:code-reviewer"` — prompt in, findings text out                                                                                                                  | SKILL.md prompt — NOT `review.sh`                                                                                                       |
+| Composed piece                              | Invocation style                                                                                                                                                                                     | Invoked by                                                                                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `yci:customer-profile`                      | Shell scripts: `resolve-customer.sh`, `load-profile.sh`                                                                                                                                              | `review.sh`                                                                                                                             |
+| `yci:customer-guard` (PreToolUse hook)      | Automatic hook intercept; NOT invoked directly                                                                                                                                                       | Claude Code runtime — NOT `review.sh`                                                                                                   |
+| `yci:_shared/customer-isolation/detect.sh`  | Shell script sourced and function called                                                                                                                                                             | `review.sh` (step 17 — final belt-and-suspenders negative check)                                                                        |
+| `yci:telemetry-sanitizer`                   | `pre-write-artifact.sh` on the rendered artifact (strict / internal per profile); optional `sanitize-output.sh` for other CLIs — **not** used on the raw `--change` file before parse in `review.sh` | `review.sh` (post-render pass); raw change is scanned in preflight instead of sanitized early                                           |
+| Compliance adapter                          | `_shared/scripts/load-compliance-adapter.sh --export --profile-json-path <path>` + filesystem reads of `evidence-template.md`, `evidence-schema.json`, `handoff-checklist.md` from `YCI_ADAPTER_DIR` | `review.sh` (step 5) and consumed by check-catalog builder (step 12), evidence-stub renderer (step 14), and artifact renderer (step 15) |
+| `yci:blast-radius`                          | Shell scripts: `blast-radius/scripts/reason.sh`, `blast-radius/scripts/render-markdown.sh`                                                                                                           | `review.sh` (after rollback derivation)                                                                                                 |
+| `ycc:planner` (Change Plan section)         | Agent tool with `subagent_type: "ycc:planner"` — prompt in, structured plan text out                                                                                                                 | SKILL.md prompt — NOT `review.sh`                                                                                                       |
+| `yci:change-reviewer` (Diff Review section) | Agent tool with `subagent_type: "yci:change-reviewer"` — prompt in, findings text out using staged `profile.json` and inventory-root context                                                         | SKILL.md prompt — NOT `review.sh`                                                                                                       |
 
 ---
 
@@ -153,13 +153,13 @@ From the project `CLAUDE.md`:
 > the same helper, duplicate it (the duplication cost is low, the coupling cost
 > is high).
 
-This rule is why `ycc:plan` and `ycc:code-review` are invoked via the Agent tool
-(prompt in, text out) rather than by sourcing any `ycc` helper scripts directly.
-`review.sh` is a `yci` artifact; it cannot and must not `source` or `bash` any
-file from the `ycc/` source tree. The only supported cross-plugin channel is the
-Agent tool, which treats the other plugin's skill as a black box: the invoking
-SKILL prompt provides a structured prompt and receives text output. No `ycc`
-filesystem path is ever embedded in any `yci` script.
+This rule is why `ycc:planner` is invoked via the Agent tool (prompt in, text out)
+rather than by sourcing any `ycc` helper scripts directly. `review.sh` is a `yci`
+artifact; it cannot and must not `source` or `bash` any file from the `ycc/`
+source tree. The only supported cross-plugin channel is the Agent tool, which
+treats the other plugin's skill as a black box: the invoking SKILL prompt provides
+a structured prompt and receives text output. No `ycc` filesystem path is ever
+embedded in any `yci` script.
 
 Stated explicitly: **If `ycc` and `yci` both need the same helper, duplicate the
 helper — do not cross the plugin boundary.**
@@ -274,12 +274,12 @@ The schema version field in the stub allows `evidence-bundle` to detect and reje
 stubs produced by an older schema revision. Do not change the stub schema without
 bumping the schema version and updating `evidence-bundle` accordingly.
 
-**`yci:change-reviewer` agent (P0).** The `yci:change-reviewer` agent delegates
-the code-review slice of this composition: it invokes `ycc:code-review` (via the
-Agent tool) for a focused deep review of the diff and returns findings that the
-SKILL prompt incorporates into the final artifact. The agent does not replace
-`review.sh`; it is an optional delegation path for the code-review phase that keeps
-the orchestrator's scope narrow.
+**`yci:change-reviewer` agent (P0).** The `yci:change-reviewer` agent owns the
+diff-review slice of this composition. The SKILL prompt hands it the diff path,
+staged `profile.json`, customer id, and inventory root so it can reason inside the
+active-customer boundary without re-resolving profile state. The agent does not
+replace `review.sh`; it is the delegated reviewer phase that keeps the orchestrator's
+scope narrow.
 
 **Generator wiring.** As of Phase 0, `yci` skills are Claude-native only. The
 cross-target generators (`generate_codex_common.py`, `generate_cursor_skills.py`,

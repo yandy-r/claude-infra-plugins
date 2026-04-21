@@ -943,7 +943,8 @@ PY
 
     local t
     for t in test_parse_change.sh test_derive_rollback.sh test_build_check_catalogs.sh \
-              test_render_artifact.sh test_render_evidence_stub.sh test_end_to_end.sh; do
+              test_render_artifact.sh test_render_evidence_stub.sh test_end_to_end.sh \
+              test_agent_delegation.sh; do
         if [ -f "${tests_dir}/${t}" ]; then
             ok "test file ${t} present"
         else
@@ -958,6 +959,13 @@ PY
             fail "tests/fixtures/${fx_dir}/ missing"
         fi
     done
+
+    printf '\n--- network-change-review test harness ---\n'
+    if bash "${tests_dir}/run-all.sh"; then
+        ok "network-change-review test harness passed"
+    else
+        fail "network-change-review test harness: one or more tests failed"
+    fi
 
     # 6. Command and agent registration
     local review_cmd="${REPO_ROOT}/yci/commands/review.md"
@@ -983,6 +991,29 @@ PY
         fail "commands/review.md missing"
     fi
 
+    if grep -q 'subagent_type: "yci:change-reviewer"' "${skill_root}/SKILL.md"; then
+        ok 'network-change-review/SKILL.md delegates diff review to yci:change-reviewer'
+    else
+        fail 'network-change-review/SKILL.md must delegate diff review to yci:change-reviewer'
+    fi
+
+    if grep -q '<profile-json-path>' "${skill_root}/SKILL.md" && \
+       grep -q '<inventory-root>' "${skill_root}/SKILL.md" && \
+       grep -q '<customer-id>' "${skill_root}/SKILL.md" && \
+       grep -q '<resolved-data-root>/profiles/<inventory-root>' "${skill_root}/SKILL.md" && \
+       grep -q '<resolved-data-root>/<inventory-root>' "${skill_root}/SKILL.md"; then
+        ok "network-change-review/SKILL.md matches review.sh inventory-root precedence and context handoff"
+    else
+        fail "network-change-review/SKILL.md must pass customer-id, staged profile.json, and the full review.sh inventory-root precedence"
+    fi
+
+    if grep -q 'yci:change-reviewer' "${skill_root}/scripts/review.sh" && \
+       ! grep -q 'ycc:code-reviewer' "${skill_root}/scripts/review.sh"; then
+        ok "review.sh text matches yci:change-reviewer delegation"
+    else
+        fail "review.sh text must reference yci:change-reviewer and not ycc:code-reviewer"
+    fi
+
     local change_reviewer_agent="${REPO_ROOT}/yci/agents/change-reviewer.md"
     if [ -f "$change_reviewer_agent" ]; then
         if python3 - "$change_reviewer_agent" <<'PY'; then
@@ -1001,6 +1032,15 @@ PY
             ok "agents/change-reviewer.md frontmatter valid"
         else
             fail "agents/change-reviewer.md: frontmatter invalid"
+        fi
+
+        if grep -q 'profile.json' "$change_reviewer_agent" && \
+           grep -q 'inventory root' "$change_reviewer_agent" && \
+           grep -q 'source of truth for active-customer state' "$change_reviewer_agent" && \
+           grep -q 'do not require them to live under the inventory root' "$change_reviewer_agent"; then
+            ok "agents/change-reviewer.md documents profile snapshot and isolation contract"
+        else
+            fail "agents/change-reviewer.md must document profile.json, inventory-root-only read boundaries, and caller-supplied diff/profile paths"
         fi
     else
         fail "agents/change-reviewer.md missing"

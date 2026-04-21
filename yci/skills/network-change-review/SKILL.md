@@ -1,6 +1,6 @@
 ---
 name: network-change-review
-description: 'Produce a full network-change review artifact (change plan, diff review, blast-radius, rollback, pre/post checklists, compliance evidence stub) for the active customer. Use when the user runs /yci:review <change>, asks to "review a network change", needs a customer-deliverable change document, or is preparing a CAB submission or MOP handoff. Composes ycc:planner and ycc:code-reviewer via the Agent tool for the change-plan and diff-review sections, then invokes the review.sh orchestrator for all remaining sections.'
+description: 'Produce a full network-change review artifact (change plan, diff review, blast-radius, rollback, pre/post checklists, compliance evidence stub) for the active customer. Use when the user runs /yci:review <change>, asks to "review a network change", needs a customer-deliverable change document, or is preparing a CAB submission or MOP handoff. Composes ycc:planner and yci:change-reviewer via the Agent tool for the change-plan and diff-review sections, then invokes the review.sh orchestrator for all remaining sections.'
 argument-hint: '<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>] [--output-dir <path>]'
 allowed-tools:
   - Read
@@ -21,7 +21,7 @@ allowed-tools:
 Produces a complete, customer-deliverable network-change review artifact for the
 active customer engagement. Given a change file (unified diff, structured YAML, or
 playbook), this skill runs a 22-step composition pipeline: it spawns `ycc:planner`
-and `ycc:code-reviewer` in parallel to generate the change-plan and diff-review
+and `yci:change-reviewer` in parallel to generate the change-plan and diff-review
 sections, then invokes `review.sh` to produce blast-radius analysis, rollback plan,
 pre/post check catalogs, a compliance evidence stub, and the final rendered artifact.
 The output is a single markdown file at a customer-scoped path under
@@ -119,19 +119,31 @@ bash "${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/preflight-cross
 ```
 
 On exit 7, stop with `ncr-cross-customer-leak-detected` — do **not** spawn
-`ycc:planner` or `ycc:code-reviewer`.
+`ycc:planner` or `yci:change-reviewer`.
 
-### Step 3 — Spawn ycc:planner and ycc:code-reviewer in parallel
+### Step 3 — Stage profile context and spawn reviewers in parallel
 
 After preflight succeeds, dispatch both subagents in **one message with two Agent
 tool calls**. **Do not** paste the raw change file into prompts (avoids leaking
 content across customers before the orchestrator runs). Give each subagent the
-**absolute path** to the change file only and instruct them to read it themselves
-via their normal file access. Save each output to a temp file:
+**absolute path** to the change file and explicit active-customer context. Before
+the Agent calls, create a temp workdir and stage the same normalized profile data
+the orchestrator will consume:
 
 ```
 NCR_WORKDIR=$(mktemp -d -t yci-ncr-skill-XXXX)
+
+bash "${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/load-profile.sh" \
+  "<resolved-data-root>" "<customer-id>" \
+  > "${NCR_WORKDIR}/profile.json"
 ```
+
+Derive the active inventory root from the staged profile snapshot using the same
+precedence as `review.sh`: if `profile.inventory.root` is an absolute path, keep
+it as-is; otherwise try `<resolved-data-root>/profiles/<inventory-root>` first
+when that directory exists, then `<resolved-data-root>/<inventory-root>`, else
+empty string when no inventory root is declared. Pass the staged profile snapshot
+path and derived inventory root to the delegated reviewer.
 
 #### Agent call 1 — ycc:planner
 
@@ -149,17 +161,20 @@ prompt: >
 
 Save output to `$NCR_WORKDIR/change-plan.md`.
 
-#### Agent call 2 — ycc:code-reviewer
+#### Agent call 2 — yci:change-reviewer
 
 ```
-subagent_type: "ycc:code-reviewer"
+subagent_type: "yci:change-reviewer"
 prompt: >
   A network change has been proposed for customer <customer-id>. The change file is
-  at <absolute-path>; read it from disk and review it for correctness, risk, and
-  operational concerns. Focus on: (a) syntax / config correctness, (b) rollback
-  readiness, (c) cross-device side effects, (d) monitoring coverage. Use your standard
-  review format, medium severity threshold. Target length: 40–80 lines. Output as
-  markdown findings, no preamble, no trailing summary.
+  at <absolute-path>. The caller staged the active profile snapshot at
+  <profile-json-path> and resolved the active inventory root as <inventory-root>.
+  Read all three paths from disk and treat them as the active-customer boundary for
+  this review. Review the change for correctness, risk, and operational concerns.
+  Focus on: (a) syntax / config correctness, (b) rollback readiness, (c) cross-device
+  side effects, (d) monitoring coverage. Use your standard review format, medium
+  severity threshold. Target length: 40–80 lines. Output as markdown findings, no
+  preamble, no trailing summary.
 ```
 
 Save output to `$NCR_WORKDIR/diff-review.md`.
@@ -207,7 +222,8 @@ to parse the change, then spawn subagents, then again with the real files) exist
 is heavier and unnecessary when the subagents can reason against the raw diff
 directly. The single-pass pattern is known-good for Phase 1. Revisit when the change
 parser's normalized JSON is more stable and the subagents benefit from structured
-target context.
+target context. The delegated reviewer already gets the staged profile snapshot and
+inventory root so it does not have to invent its own profile-resolution flow.
 
 ## Error handling
 
@@ -256,7 +272,7 @@ introduces auto-apply behavior is a defect.
 This skill composes `yci:blast-radius` (via `blast-radius/scripts/reason.sh` and
 `render-markdown.sh`), `yci:customer-profile` (via `resolve-customer.sh` and
 `load-profile.sh`), the `yci:_shared` compliance adapter and telemetry sanitizer,
-and — via the Agent tool — `ycc:planner` and `ycc:code-reviewer`. The Agent tool
+and — via the Agent tool — `ycc:planner` and `yci:change-reviewer`. The Agent tool
 is the only supported cross-plugin channel: no `ycc` filesystem path is sourced or
 referenced in any `yci` script (per `CLAUDE.md` cross-plugin helper sharing rule).
 The full composition order, data-flow diagram, and invocation mechanics by boundary

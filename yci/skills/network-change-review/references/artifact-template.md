@@ -24,7 +24,7 @@ slot source failed, and discards the partially-rendered artifact.
 | `{{compliance_regime}}`           | `evidence_stub.compliance_regime` — e.g. `commercial`, `none`                                    | fatal (hard stop)                  |
 | `{{change_summary}}`              | `parse-change.sh` normalized JSON `summary` field                                                | fatal (hard stop)                  |
 | `{{change_plan}}`                 | `ycc:plan` subagent output (markdown)                                                            | fatal (hard stop)                  |
-| `{{diff_review}}`                 | `ycc:code-review` subagent output (markdown)                                                     | fatal (hard stop)                  |
+| `{{diff_review}}`                 | `yci:change-reviewer` subagent output (markdown)                                                 | fatal (hard stop)                  |
 | `{{blast_radius}}`                | `yci:blast-radius` rendered markdown output                                                      | fatal (hard stop)                  |
 | `{{rollback_plan}}`               | `derive-rollback.sh` rendered rollback steps (markdown)                                          | fatal (hard stop)                  |
 | `{{rollback_confidence_callout}}` | Empty string when `rollback_confidence` is `high`; visible warning block when `low` or `medium`  | n/a (always computed)              |

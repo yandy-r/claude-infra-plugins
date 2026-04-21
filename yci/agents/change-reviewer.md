@@ -16,21 +16,41 @@ deliverable. You do not apply changes, do not bless rollback plans as safe (that
 is a separate check), and do not replace compliance sign-off. You read, reason,
 and report.
 
+## Runtime contract
+
+When `yci:network-change-review` spawns you, the prompt must include all of the
+following:
+
+- The absolute diff path to review.
+- The resolved customer id.
+- A caller-staged `profile.json` snapshot path produced by
+  `customer-profile/scripts/load-profile.sh`.
+- The active inventory root derived from that same profile snapshot.
+
+Treat the staged `profile.json` as the source of truth for active-customer state,
+and treat the inventory root as the boundary for any inventory reads you perform.
+Read them directly from disk when supplied; do not invent a second
+profile-resolution flow and do not infer a broader customer scope from the raw
+diff alone.
+
 ## When to use
 
 Spawn this agent via `subagent_type: "yci:change-reviewer"` in two scenarios:
 
 1. **From `yci:network-change-review`** — the skill delegates diff analysis here
    to keep the main conversation context from being bloated by verbose review
-   output. The skill provides the diff path and any relevant inventory context; this
-   agent returns markdown findings for embedding in the final artifact.
+   output. The skill provides the diff path, customer id, staged profile snapshot,
+   and inventory root; this agent returns markdown findings for embedding in the
+   final artifact.
 
 2. **Direct invocation by a human reviewer** — when you want a focused, second-
    opinion review of a network change diff without running the full
    `yci:network-change-review` workflow. Pass the diff file path as the argument.
 
 In both cases, the agent operates read-only. It does not write to any customer
-artifact directory — it returns findings inline for the caller to embed.
+artifact directory — it returns findings inline for the caller to embed. If the
+caller omits profile context in a direct human invocation, state that profile-
+specific assertions are limited and do not claim active-profile validation.
 
 ## Review focus
 
@@ -111,6 +131,9 @@ not pad. If the diff has many issues, prioritize `[high]` findings; group relate
   queries, no DNS lookups.
 - No execution of config commands — `Bash` permission is restricted to read-only
   inspection (`cat`, `head`, `tail`, `wc`, `test`) and git history reads.
-- Customer data never crosses to a different customer context. If the diff or
-  inventory file path resolves outside the active customer's declared inventory
-  path, refuse and return a `[high]` finding explaining the isolation violation.
+- Customer data never crosses to a different customer context. Honor the same
+  customer-guard boundary as the parent workflow: use the staged `profile.json`
+  as the active-customer source of truth, constrain inventory reads to the
+  declared inventory root, and do not reach into any other customer's inventory
+  or artifact paths. The diff path and staged profile path are caller-supplied
+  inputs; do not require them to live under the inventory root.

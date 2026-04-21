@@ -10,7 +10,7 @@
 #     --profile <path>               \  # profile JSON (load-profile.sh output)
 #     --adapter-dir <path>           \  # resolved compliance adapter directory
 #     --change-plan <path>           \  # markdown: ycc:plan subagent output
-#     --diff-review <path>           \  # markdown: ycc:code-review output
+#     --diff-review <path>           \  # markdown: yci:change-reviewer output
 #     --blast-radius-markdown <path> \  # markdown: blast-radius/render-markdown.sh output
 #     --rollback <path>              \  # text: derive-rollback.sh rollback steps
 #     --rollback-confidence <level>  \  # high|medium|low
@@ -46,7 +46,7 @@ Options:
   --profile <path>               Profile JSON (load-profile.sh output)        [required]
   --adapter-dir <path>           Resolved compliance adapter directory         [required]
   --change-plan <path>           Markdown: ycc:plan subagent output            [required]
-  --diff-review <path>           Markdown: ycc:code-review output              [required]
+  --diff-review <path>           Markdown: yci:change-reviewer output          [required]
   --blast-radius-markdown <path> Markdown: blast-radius/render-markdown.sh     [required]
   --rollback <path>              Text: derive-rollback.sh rollback steps       [required]
   --rollback-confidence <level>  high|medium|low                               [required]

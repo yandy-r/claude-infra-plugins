@@ -14,14 +14,14 @@
 #   --format <format>    deliverable format override (else from profile.deliverable.format)
 #   --output-dir <path>  override final artifact directory
 #   --change-plan <path> pre-generated change plan markdown (from ycc:planner subagent)
-#   --diff-review <path> pre-generated diff review markdown (from ycc:code-reviewer subagent)
+#   --diff-review <path> pre-generated diff review markdown (from yci:change-reviewer subagent)
 #   -h, --help           show this help and exit 0
 #
 # Stdout:  final artifact path (one line) on success
 # Stderr:  yci-ncr: [step N/22] progress; [ncr-<id>] errors
 # Exit:    0 success | 2 setup | 3 input shape | 4 sanitizer | 5 composed | 6 render | 7 isolation
 #
-# Note: shell scripts cannot invoke Agent tools. ycc:planner and ycc:code-reviewer
+# Note: shell scripts cannot invoke Agent tools. ycc:planner and yci:change-reviewer
 # integrations happen at the SKILL.md prompt layer. Pass their output files here via
 # --change-plan and --diff-review; omitting either inserts a placeholder block.
 
@@ -53,7 +53,7 @@ Options:
   --format <format>    Deliverable format override (else from profile.deliverable.format)
   --output-dir <path>  Override final artifact directory
   --change-plan <path> Pre-generated change plan markdown (from ycc:planner)
-  --diff-review <path> Pre-generated diff review markdown (from ycc:code-reviewer)
+  --diff-review <path> Pre-generated diff review markdown (from yci:change-reviewer)
   -h, --help           Show this help and exit 0
 
 Exit codes (references/error-messages.md):
@@ -347,9 +347,9 @@ if [[ -n "$diff_review_path" ]]; then
   cp "$diff_review_path" "${workdir}/diff-review.md"
 else
   cat > "${workdir}/diff-review.md" <<'PLACEHOLDER'
-> **Diff Review** — Expected to be populated by `ycc:code-reviewer` subagent. The orchestrator
+> **Diff Review** — Expected to be populated by `yci:change-reviewer` subagent. The orchestrator
 > was invoked without a pre-generated diff review. The SKILL.md prompt layer is responsible for
-> spawning `ycc:code-reviewer` and passing `--diff-review <path>` to this orchestrator.
+> spawning `yci:change-reviewer` and passing `--diff-review <path>` to this orchestrator.
 PLACEHOLDER
 fi
 

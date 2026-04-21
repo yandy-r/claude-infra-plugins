@@ -331,8 +331,8 @@ above — never relax redaction for normal customer engagements.
 `yci:network-change-review` is the P0.5 keystone skill (PRD §6.1). It composes
 `yci:customer-profile`, `yci:customer-guard` (via the automatic PreToolUse hook),
 `yci:telemetry-sanitizer`, the compliance adapter, `yci:blast-radius`, and — via
-the Agent tool — `ycc:plan` and `ycc:code-review` into a single dual-branded
-deliverable. It is "keystone" because every downstream P0/P1 skill (`yci:mop`,
+the Agent tool — `ycc:planner` plus the delegated `yci:change-reviewer` into a
+single dual-branded deliverable. It is "keystone" because every downstream P0/P1 skill (`yci:mop`,
 `yci:evidence-bundle`, `yci:cab-prep`) either consumes its outputs or follows its
 composition pattern (PRD §5.6, PRD §6.1). Shipping a reliable
 `yci:network-change-review` is the prerequisite for every subsequent workflow skill
@@ -357,9 +357,10 @@ The orchestrator (`review.sh`) runs these stages in order:
 7. **Catalogs** — `build-check-catalogs.sh` produces pre/post-check catalog JSON
    from the adapter's `evidence-template.md` and `evidence-schema.json`.
 8. **Plan + review** (SKILL layer, before `review.sh`) — run the same cross-customer
-   preflight as `review.sh` (`preflight-cross-customer.sh`), then dispatch
-   `ycc:planner` and `ycc:code-reviewer` in parallel via the Agent tool; pass their
-   outputs with `--change-plan` and `--diff-review` into `review.sh`.
+   preflight as `review.sh` (`preflight-cross-customer.sh`), stage the active
+   profile snapshot, then dispatch `ycc:planner` and `yci:change-reviewer` in
+   parallel via the Agent tool; pass their outputs with `--change-plan` and
+   `--diff-review` into `review.sh`.
 9. **Render** — `render-evidence-stub.sh` then `render-artifact.sh` assemble the
    full review markdown in memory.
 10. **Sanitize** — `pre-write-artifact.sh` (strict mode, sanitizer pass 2) runs
@@ -377,12 +378,14 @@ From the project `CLAUDE.md`:
 > the same helper, duplicate it (the duplication cost is low, the coupling cost
 > is high).
 
-`ycc:plan` and `ycc:code-review` are invoked via the Agent tool with
-`subagent_type: "ycc:planner"` / `"ycc:code-reviewer"` — structured prompt in,
-text out. `review.sh` is a `yci` artifact; it cannot and must not `source` or
-`bash` any file from the `ycc/` source tree. The only supported cross-plugin
-channel is the Agent tool, which treats the other plugin's skill as a black box.
-No `ycc` filesystem path is ever embedded in any `yci` script. This boundary
+`ycc:planner` is invoked via the Agent tool with `subagent_type: "ycc:planner"` —
+structured prompt in, text out. The diff-review slice is delegated to
+`subagent_type: "yci:change-reviewer"` with a staged `profile.json` and inventory
+root so the reviewer stays inside the active customer boundary. `review.sh` is a
+`yci` artifact; it cannot and must not `source` or `bash` any file from the
+`ycc/` source tree. The only supported cross-plugin channel is the Agent tool,
+which treats the other plugin's skill as a black box. No `ycc` filesystem path is
+ever embedded in any `yci` script. This boundary
 discipline mirrors the adapter-boundary precedent documented in the
 [Compliance-Adapter Pattern](#compliance-adapter-pattern) section above: `yci`
 defines its own interface and calls `ycc` only through documented,
