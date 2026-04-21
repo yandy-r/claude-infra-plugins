@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yci.example/compliance-adapters/commercial/evidence-schema/1",
+  "title": "yci commercial evidence bundle",
+  "description": "Required-field schema for evidence bundles produced under the commercial compliance regime. Version 1.",
+  "type": "object",
+  "required": [
+    "change_id",
+    "change_summary",
+    "pre_check_artifacts",
+    "post_check_artifacts",
+    "rollback_plan",
+    "approver",
+    "timestamp_utc",
+    "profile_commit"
+  ],
+  "properties": {
+    "change_id": {
+      "type": "string",
+      "description": "Unique ID for this change event (ticket reference, UUID, or opaque token)."
+    },
+    "change_summary": {
+      "type": "string",
+      "description": "One-paragraph human summary of what changed and why."
+    },
+    "pre_check_artifacts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths or URIs to artifacts captured before the change (state dumps, screenshots, test output)."
+    },
+    "post_check_artifacts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths or URIs to artifacts captured after the change (same shape as pre_check_artifacts)."
+    },
+    "rollback_plan": {
+      "type": "string",
+      "description": "Human-readable rollback steps or a reference to a rehearsed runbook."
+    },
+    "approver": {
+      "type": "string",
+      "description": "Identity of the human who approved this change (email, handle, or ticket approver)."
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp the change landed."
+    },
+    "profile_commit": {
+      "type": "string",
+      "description": "Git commit hash of the customer profile snapshot used for this change."
+    }
+  },
+  "additionalProperties": true
+}

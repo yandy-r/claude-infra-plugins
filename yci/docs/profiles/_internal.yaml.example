@@ -33,11 +33,11 @@ approval:
 
 deliverable:
   format: [markdown]
-  # header_template intentionally omitted — no branding for internal work.
+  header_template: ""                # empty string — no branding for internal work
   handoff_format: git-repo
   # deliverable.path omitted — falls back to $YCI_DATA_ROOT/artifacts/_internal/
 
 safety:
   default_posture: review            # neither dry-run nor apply — human reviews each change
   change_window_required: false
-  scope_enforcement: off             # don't block or warn on scope for internal work
+  scope_enforcement: "off"           # quoted to avoid YAML 1.1 boolean coercion

@@ -4,6 +4,7 @@
 
 YCI_TEST_PASS=0
 YCI_TEST_FAIL=0
+YCI_TEST_SKIP=0
 YCI_TEST_FILE="${BASH_SOURCE[1]##*/}"  # caller's basename
 
 # Resolve key directory paths (tolerates missing dirs — scripts may not yet exist)
@@ -38,14 +39,22 @@ export YCI_REFS_DIR
 
 _yci_test_report() {
     local status="$1" name="$2" detail="${3:-}"
-    if [ "$status" = "PASS" ]; then
-        YCI_TEST_PASS=$((YCI_TEST_PASS + 1))
-        [ "${YCI_TEST_VERBOSE:-0}" = "1" ] && printf '  \033[32m+\033[0m %s\n' "$name"
-    else
-        YCI_TEST_FAIL=$((YCI_TEST_FAIL + 1))
-        printf '  \033[31mFAIL\033[0m %s\n' "$name" >&2
-        [ -n "$detail" ] && printf '    %s\n' "$detail" >&2
-    fi
+    case "$status" in
+        PASS)
+            YCI_TEST_PASS=$((YCI_TEST_PASS + 1))
+            [ "${YCI_TEST_VERBOSE:-0}" = "1" ] && printf '  \033[32m+\033[0m %s\n' "$name"
+            ;;
+        SKIP)
+            YCI_TEST_SKIP=$((${YCI_TEST_SKIP:-0} + 1))
+            printf '  \033[33mSKIP\033[0m %s\n' "$name"
+            [ -n "$detail" ] && printf '    %s\n' "$detail"
+            ;;
+        *)
+            YCI_TEST_FAIL=$((YCI_TEST_FAIL + 1))
+            printf '  \033[31mFAIL\033[0m %s\n' "$name" >&2
+            [ -n "$detail" ] && printf '    %s\n' "$detail" >&2
+            ;;
+    esac
 }
 
 # ---------------------------------------------------------------------------
@@ -184,11 +193,15 @@ with_sandbox() {
 # ---------------------------------------------------------------------------
 
 yci_test_summary() {
+    local skip_suffix=""
+    if [ "${YCI_TEST_SKIP:-0}" -gt 0 ]; then
+        skip_suffix=", $YCI_TEST_SKIP skipped"
+    fi
     if [ "$YCI_TEST_FAIL" -eq 0 ]; then
-        printf '  %s: %d passed\n' "$YCI_TEST_FILE" "$YCI_TEST_PASS"
+        printf '  %s: %d passed%s\n' "$YCI_TEST_FILE" "$YCI_TEST_PASS" "$skip_suffix"
         return 0
     else
-        printf '  %s: %d passed, %d FAILED\n' "$YCI_TEST_FILE" "$YCI_TEST_PASS" "$YCI_TEST_FAIL" >&2
+        printf '  %s: %d passed, %d FAILED%s\n' "$YCI_TEST_FILE" "$YCI_TEST_PASS" "$YCI_TEST_FAIL" "$skip_suffix" >&2
         return 1
     fi
 }
