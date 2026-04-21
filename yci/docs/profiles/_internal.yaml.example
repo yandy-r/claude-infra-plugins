@@ -1,0 +1,43 @@
+# Stock _internal profile — homelab / consultant-internal use only.
+# Copy this file to $YCI_DATA_ROOT/profiles/_internal.yaml to activate.
+# NEVER commit operational profiles (real customer data) to the repo.
+# See yci/docs/profiles.md and yci/CONTRIBUTING.md.
+
+customer:
+  id: _internal
+  display_name: "Internal / Homelab"
+  # No branding required for internal work.
+
+engagement:
+  id: internal-ongoing
+  type: ongoing            # discovery | design | implementation | ongoing
+  sow_ref: "N/A (internal)"
+  scope_tags: [_internal]
+  start_date: 2026-01-01
+  end_date: 2099-12-31
+
+compliance:
+  regime: none             # relaxed: no formal compliance framing
+  evidence_schema_version: 1
+
+# No change_window block — homelab has no maintenance windows.
+
+inventory:
+  adapter: file            # simplest option; manual YAML/JSON inventory
+  # inventory.path omitted — falls back to $YCI_DATA_ROOT/inventories/_internal/
+
+approval:
+  adapter: none            # no external approval system
+
+# vaults: block omitted — falls back to $YCI_DATA_ROOT/vaults/_internal/
+
+deliverable:
+  format: [markdown]
+  # header_template intentionally omitted — no branding for internal work.
+  handoff_format: git-repo
+  # deliverable.path omitted — falls back to $YCI_DATA_ROOT/artifacts/_internal/
+
+safety:
+  default_posture: review            # neither dry-run nor apply — human reviews each change
+  change_window_required: false
+  scope_enforcement: off             # don't block or warn on scope for internal work
