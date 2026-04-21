@@ -12,6 +12,9 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# shellcheck source=lib/shellcheck-resolve.sh
+source "${SCRIPT_DIR}/lib/shellcheck-resolve.sh"
+
 ERRORS=0
 
 fail() { printf '  ✗ fail: %s\n' "$*" >&2; ERRORS=$((ERRORS + 1)); }
@@ -303,7 +306,7 @@ PY
 
     # --- shellcheck ---
     printf '\n--- shellcheck (customer-profile) ---\n'
-    if command -v shellcheck >/dev/null 2>&1; then
+    if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
         local sc_files=()
         # collect skill scripts
         while IFS= read -r f; do sc_files+=("$f"); done \
@@ -315,7 +318,7 @@ PY
             < <(ls "${tests_dir}/run-all.sh" "${tests_dir}/helpers.sh" \
                     "${tests_dir}/"test_*.sh 2>/dev/null)
 
-        if shellcheck --severity=warning "${sc_files[@]}"; then
+        if "$SHELLCHECK_BIN" --severity=warning "${sc_files[@]}"; then
             ok "shellcheck clean on ${#sc_files[@]} files"
         else
             fail "shellcheck reported warnings/errors"
