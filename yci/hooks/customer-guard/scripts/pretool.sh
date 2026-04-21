@@ -18,9 +18,180 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 HOOK_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
 YCI_ROOT="$(cd "${HOOK_ROOT}/../.." && pwd -P)"
+REPO_ROOT="$(cd "${YCI_ROOT}/.." && pwd -P)"
+YCC_ROOT="${REPO_ROOT}/ycc"
 
 # shellcheck source=/dev/null
 source "${SCRIPT_DIR}/decision-json.sh"
+
+_payload_has_string_marker() {
+    local payload="$1"
+    local marker="$2"
+
+    python3 - "$payload" "$marker" <<'PY'
+import json
+import sys
+
+
+def walk(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from walk(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from walk(item)
+
+
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    sys.exit(1)
+
+marker = sys.argv[2].lower()
+for value in walk(payload):
+    if marker in value.lower():
+        sys.exit(0)
+
+sys.exit(1)
+PY
+}
+
+_payload_is_yci_related() {
+    local payload="$1"
+    local extractor="${YCI_ROOT}/skills/_shared/customer-isolation/scripts/extract-paths.py"
+    local path
+
+    if _payload_has_string_marker "$payload" "/yci:"; then
+        return 0
+    fi
+    if _payload_has_string_marker "$payload" "yci:"; then
+        return 0
+    fi
+
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        case "$path" in
+            "${YCI_ROOT}"|\
+            "${YCI_ROOT}/"*|\
+            "${YCI_DATA_ROOT_RESOLVED}"|\
+            "${YCI_DATA_ROOT_RESOLVED}/"*)
+                return 0
+                ;;
+        esac
+    done < <(printf '%s' "$payload" | python3 "$extractor")
+
+    return 1
+}
+
+_payload_is_ycc_related() {
+    local payload="$1"
+    local extractor="${YCI_ROOT}/skills/_shared/customer-isolation/scripts/extract-paths.py"
+    local path
+
+    if _payload_has_string_marker "$payload" "/ycc:"; then
+        return 0
+    fi
+    if _payload_has_string_marker "$payload" "ycc:"; then
+        return 0
+    fi
+
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        case "$path" in
+            "${YCC_ROOT}"|\
+            "${YCC_ROOT}/"*|\
+            "${REPO_ROOT}/.codex-plugin/ycc"|\
+            "${REPO_ROOT}/.codex-plugin/ycc/"*|\
+            "${REPO_ROOT}/.cursor-plugin"|\
+            "${REPO_ROOT}/.cursor-plugin/"*|\
+            "${REPO_ROOT}/.opencode-plugin"|\
+            "${REPO_ROOT}/.opencode-plugin/"*)
+                return 0
+                ;;
+        esac
+    done < <(printf '%s' "$payload" | python3 "$extractor")
+
+    return 1
+}
+
+_bootstrap_marker_present() {
+    local payload="$1"
+
+    _payload_has_string_marker "$payload" "/yci:init" && return 0
+    _payload_has_string_marker "$payload" "/yci:switch" && return 0
+
+    python3 - "$payload" <<'PY'
+import json
+import sys
+
+
+def walk(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from walk(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from walk(item)
+
+
+try:
+    payload = json.loads(sys.argv[1])
+except Exception:
+    sys.exit(1)
+
+for value in walk(payload):
+    lowered = value.lower()
+    if "yci:customer-profile" in lowered and ("init" in lowered or "switch" in lowered):
+        sys.exit(0)
+
+sys.exit(1)
+PY
+}
+
+_bootstrap_payload_allowed_without_active_customer() {
+    local payload="$1"
+    local extractor="${YCI_ROOT}/skills/_shared/customer-isolation/scripts/extract-paths.py"
+    local has_repo_bootstrap_path=0
+    local has_any_path=0
+    local path
+
+    # This bootstrap lane is intentionally yci-only. It exists to let
+    # /yci:init and /yci:switch establish an active customer; it must not
+    # soften the no-active-customer posture for ycc or general tool calls.
+    if _bootstrap_marker_present "$payload"; then
+        return 0
+    fi
+
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        has_any_path=1
+        case "$path" in
+            "${YCI_ROOT}/commands/init.md"|\
+            "${YCI_ROOT}/commands/switch.md"|\
+            "${YCI_ROOT}/skills/customer-profile/SKILL.md"|\
+            "${YCI_ROOT}/skills/customer-profile/"*|\
+            "${YCI_ROOT}/skills/_shared/scripts/resolve-data-root.sh")
+                has_repo_bootstrap_path=1
+                ;;
+            "${YCI_DATA_ROOT_RESOLVED}"|\
+            "${YCI_DATA_ROOT_RESOLVED}/profiles"|\
+            "${YCI_DATA_ROOT_RESOLVED}/profiles/"*|\
+            "${YCI_DATA_ROOT_RESOLVED}/state.json"|\
+            "${YCI_DATA_ROOT_RESOLVED}/.state.json."*)
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    done < <(printf '%s' "$payload" | python3 "$extractor")
+
+    [ "$has_any_path" -eq 1 ] || return 1
+    [ "$has_repo_bootstrap_path" -eq 1 ] || return 1
+}
 
 # ---------------------------------------------------------------------------
 # 1. Read stdin payload
@@ -29,7 +200,26 @@ source "${SCRIPT_DIR}/decision-json.sh"
 INPUT="$(cat)"
 
 # ---------------------------------------------------------------------------
-# 2. Resolve active customer via resolve-customer.sh
+# 2. Resolve data root early so no-active-customer bootstrap checks can use it
+# ---------------------------------------------------------------------------
+
+RDR="${YCI_ROOT}/skills/_shared/scripts/resolve-data-root.sh"
+if [ -x "$RDR" ]; then
+    YCI_DATA_ROOT_RESOLVED="$(bash "$RDR" 2>/dev/null || true)"
+fi
+YCI_DATA_ROOT_RESOLVED="${YCI_DATA_ROOT_RESOLVED:-${YCI_DATA_ROOT:-$HOME/.config/yci}}"
+export YCI_DATA_ROOT_RESOLVED
+
+# ---------------------------------------------------------------------------
+# 2.5. ycc is always exempt from customer enforcement.
+# ---------------------------------------------------------------------------
+
+if _payload_is_ycc_related "$INPUT"; then
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# 3. Resolve active customer via resolve-customer.sh
 #    load-profile.sh + resolve-customer.sh live in yci/skills/customer-profile/scripts/.
 # ---------------------------------------------------------------------------
 
@@ -43,6 +233,12 @@ RESOLVE="${YCI_ROOT}/skills/customer-profile/scripts/resolve-customer.sh"
 ACTIVE_OUT=""; ACTIVE_RC=0
 ACTIVE_OUT="$(bash "$RESOLVE" 2>&1)" || ACTIVE_RC=$?
 if [ "$ACTIVE_RC" -ne 0 ]; then
+    if ! _payload_is_yci_related "$INPUT"; then
+        exit 0
+    fi
+    if _bootstrap_payload_allowed_without_active_customer "$INPUT"; then
+        exit 0
+    fi
     # Fail-open opt-in
     if [ "${YCI_GUARD_FAIL_OPEN:-0}" = "1" ]; then
         printf 'yci guard: resolver refused but YCI_GUARD_FAIL_OPEN=1; allowing.\n' >&2
@@ -57,17 +253,6 @@ fi
 # resolve-customer.sh prints the active customer id on stdout (one line)
 YCI_ACTIVE_CUSTOMER="$(printf '%s' "$ACTIVE_OUT" | tr -d '[:space:]')"
 export YCI_ACTIVE_CUSTOMER
-
-# ---------------------------------------------------------------------------
-# 3. Resolve data root
-# ---------------------------------------------------------------------------
-
-RDR="${YCI_ROOT}/skills/_shared/scripts/resolve-data-root.sh"
-if [ -x "$RDR" ]; then
-    YCI_DATA_ROOT_RESOLVED="$(bash "$RDR" 2>/dev/null || true)"
-fi
-YCI_DATA_ROOT_RESOLVED="${YCI_DATA_ROOT_RESOLVED:-${YCI_DATA_ROOT:-$HOME/.config/yci}}"
-export YCI_DATA_ROOT_RESOLVED
 
 # ---------------------------------------------------------------------------
 # 4. Source detection library + evaluate
