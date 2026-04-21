@@ -36,7 +36,7 @@ def parse_rules_file(path: Path, *, default_name: str) -> list[AdapterRule]:
         if line.upper().startswith("RE:"):
             expr = line[3:].lstrip()
             if not expr:
-                continue
+                raise ValueError(f"{path}: empty RE: directive (no regex expression after RE:): {line!r}")
             try:
                 rx = re.compile(expr)
             except re.error as e:
@@ -52,6 +52,8 @@ def parse_rules_file(path: Path, *, default_name: str) -> list[AdapterRule]:
             )
             continue
         raise ValueError(f"{path}: unrecognized line (expected RE: or NAME:): {line!r}")
+    if pending_name is not None:
+        raise ValueError(f"{path}: trailing NAME: with no following RE: (pending name={pending_name!r})")
     return rules
 
 

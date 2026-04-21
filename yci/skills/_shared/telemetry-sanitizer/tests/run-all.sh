@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=/dev/null
@@ -11,7 +11,7 @@ for arg in "$@"; do
     case "$arg" in
         --verbose|-v) VERBOSE=1 ;;
         test_*.sh)    FILTER+=("$arg") ;;
-        *)            printf 'unknown arg: %s\n' "$arg" >&2; exit 2 ;;
+        *)            printf 'unknown arg: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
 export YCI_TEST_VERBOSE=$VERBOSE

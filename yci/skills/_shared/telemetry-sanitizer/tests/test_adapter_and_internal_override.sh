@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Adapter load + internal mode (hostname heuristic relaxed).
 
-set -uo pipefail
+set -euo pipefail
 
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=/dev/null

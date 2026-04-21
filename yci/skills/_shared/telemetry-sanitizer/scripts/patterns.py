@@ -52,12 +52,16 @@ def patterns_network_ids() -> list[PatternSpec]:
     mac = r"(?:[0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}"
     return [
         PatternSpec("ipv4", _c(r"\b" + ipv4 + r"\b"), "[REDACTED_IPV4]"),
-        PatternSpec("ipv6", _c(r"(?<![0-9A-Fa-f:])" + ipv6 + r"(?![0-9A-Fa-f:])"), "[REDACTED_IPV6]"),
+        PatternSpec(
+            "ipv6",
+            _c(r"(?<![0-9A-Fa-f:])" + "(?:" + ipv6 + ")" + r"(?![0-9A-Fa-f:])"),
+            "[REDACTED_IPV6]",
+        ),
         PatternSpec("mac", _c(r"\b" + mac + r"\b"), "[REDACTED_MAC]"),
         PatternSpec(
             "asn",
             _c(r"\b(?:AS|ASN)\s*(\d{1,6})\b", re.I),
-            r"[REDACTED_ASN_\1]",
+            "[REDACTED_ASN]",
         ),
     ]
 
@@ -86,7 +90,7 @@ def pattern_generic_kv_secret() -> re.Pattern[str]:
 
 
 def pattern_fqdn_strict() -> re.Pattern[str]:
-    return _c(r"\b(?=.{4,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+" r"[a-zA-Z]{2,63}\b")
+    return _c(r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+" r"[a-zA-Z]{2,63}\b")
 
 
 def pattern_customer_slug_hostnames(customer_id: str) -> list[PatternSpec]:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Unit tests: core pattern redaction + known-leak corpus.
 
-set -uo pipefail
+set -euo pipefail
 
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=/dev/null
@@ -26,7 +26,7 @@ assert_not_contains "$out" "AKIAIOSFODNN7EXAMPLE" "aws_access_key_redacted"
 assert_not_contains "$out" "123456789012" "aws_account_redacted"
 assert_not_contains "$out" "10.0.0.1" "ipv4_redacted"
 assert_not_contains "$out" "aa:bb:cc:dd:ee:ff" "mac_redacted"
-assert_contains "$out" "REDACTED_ASN_" "asn_redacted_marker"
+assert_contains "$out" "[REDACTED_ASN]" "asn_redacted_marker"
 assert_not_contains "$out" "12345678-1234-1234-1234-123456789abc" "azure_guid_redacted"
 assert_not_contains "$out" "app.acme-corp.example.com" "customer_slug_host_redacted"
 assert_not_contains "$out" "123-45-6789" "ssn_redacted_via_hipaa_adapter"
