@@ -65,7 +65,7 @@ slot source failed, and discards the partially-rendered artifact.
 
 ---
 
-# Network Change Review
+## Network Change Review
 
 **Change ID:** `{{change_id}}`
 **Customer:** `{{customer_id}}`

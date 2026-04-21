@@ -465,7 +465,7 @@ are not repeated here. See
 
 ## Style Guide
 
-- **`yci:` prefix**: every message begins with `yci: ` so users can immediately
+- **`yci:` prefix**: every message begins with `yci:` so users can immediately
   identify which tool produced the error, regardless of surrounding shell output.
 - **Angle-bracket placeholders**: dynamic parts appear as `<placeholder>` in this
   catalogue (e.g., `<path>`, `<field>`, `<value>`). Scripts substitute the actual

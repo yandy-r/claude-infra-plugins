@@ -35,6 +35,7 @@ this catalog, the emitting script, and the corresponding test in the same change
   no `.yci-customer` dotfile found from `$PWD` up to `$HOME`, and `state.json`
   either absent or has no non-empty `.active` field.
 - **Message**:
+
   ```
   yci: no active customer.
     $YCI_CUSTOMER: unset
@@ -42,8 +43,10 @@ this catalog, the emitting script, and the corresponding test in the same change
     state.json: no active customer at <path>
   Run `/yci:init <customer>` to create a profile, or `/yci:switch <customer>` to activate one.
   ```
+
   When `$YCI_CUSTOMER` was set but rejected because it was whitespace-only,
   replace `unset` with `empty (whitespace-only)`.
+
 - **Test coverage**: `test_resolve_customer.sh::test_no_active_customer`,
   `test_resolve_customer.sh::test_whitespace_env_shows_empty_hint`
 
@@ -59,11 +62,13 @@ this catalog, the emitting script, and the corresponding test in the same change
   alphanumeric, interior hyphens only, no leading hyphen, no underscore, no
   uppercase). Example: `ACME`, `acme_corp`, `-acme`.
 - **Message**:
+
   ```
   yci: invalid customer id: '<customer>'
     allowed pattern: [a-z0-9][a-z0-9-]*  (lowercase, hyphens only)
   Check $YCI_CUSTOMER, your .yci-customer dotfile, or state.json .active field.
   ```
+
 - **Test coverage**: `test_resolve_customer.sh::test_invalid_id_format`
 
 ---
@@ -95,10 +100,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: the resolved data-root path exists but is not writable by the
   current process (permission check fails).
 - **Message**:
+
   ```
   yci: data root is not writable: <path>
     check directory permissions or set a writable path via --data-root or $YCI_DATA_ROOT
   ```
+
 - **Test coverage**: `test_resolve_data_root.sh::test_dataroot_unwritable`
 
 ---
@@ -112,10 +119,12 @@ this catalog, the emitting script, and the corresponding test in the same change
   canonicalized — the path is syntactically invalid, contains null bytes, or
   `realpath` / equivalent normalization fails.
 - **Message**:
+
   ```
   yci: cannot resolve data root path: '<path>'
     ensure the path is a valid absolute or expandable path
   ```
+
 - **Test coverage**: `test_resolve_data_root.sh::test_dataroot_invalid_path`
 
 ---
@@ -132,10 +141,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: the expected profile YAML file does not exist at the resolved path
   `<data-root>/profiles/<customer-id>.yaml`.
 - **Message**:
+
   ```
   yci: profile not found: <path>
     create a new profile with `/yci:init <customer>` or copy _template.yaml
   ```
+
 - **Test coverage**: `test_load_profile.sh::test_missing_file`
 
 ---
@@ -148,12 +159,15 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: `python3 -c "import yaml; yaml.safe_load(...)"` raises a
   `yaml.YAMLError` — the file is not valid YAML.
 - **Message**:
+
   ```
   yci: malformed YAML in profile: <path>
     <parse-error>
   Fix the YAML syntax and retry.
   ```
+
   `<parse-error>` is the verbatim first line of the pyyaml exception message.
+
 - **Test coverage**: `test_load_profile.sh::test_malformed_yaml`
 
 ---
@@ -167,10 +181,12 @@ this catalog, the emitting script, and the corresponding test in the same change
   `engagement`, `compliance`, `inventory`, `approval`, `deliverable`, `safety`)
   or a required nested key within those subtrees is absent from the loaded YAML.
 - **Message**:
+
   ```
   yci: missing required field '<field>' in profile: <path>
     see yci/skills/customer-profile/references/schema.md for required fields
   ```
+
 - **Test coverage**: `test_load_profile.sh::test_missing_required_key`
 
 ---
@@ -191,11 +207,13 @@ this catalog, the emitting script, and the corresponding test in the same change
     `always-open`, `none`
   - `deliverable.handoff_format`: `git-repo`, `zip`, `confluence`, `pdf-bundle`
 - **Message**:
+
   ```
   yci: invalid value for '<field>': '<value>'
     allowed values: <allowed-list>
     see yci/skills/customer-profile/references/schema.md for the canonical enum lists
   ```
+
 - **Test coverage**: `test_load_profile.sh::test_invalid_enum_value`
 
 ---
@@ -208,10 +226,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: `python3 -c "import yaml"` exits non-zero — the `pyyaml` library
   is not installed in the active Python environment.
 - **Message**:
+
   ```
   yci: pyyaml not found — cannot parse YAML profiles
     pyyaml required — install via 'pip install pyyaml' or your distro's python3-yaml package
   ```
+
 - **Test coverage**: `test_load_profile.sh::test_pyyaml_missing`
 
 ---
@@ -228,10 +248,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: `state.json` exists but fails to parse as valid JSON (e.g.,
   truncated file, hand-edited corruption, encoding issue).
 - **Message**:
+
   ```
   yci: corrupt state file: <path>
     state.json failed JSON parse — delete or repair the file to continue
   ```
+
 - **Test coverage**: `test_state_io.sh::test_corrupt_json`
 
 ---
@@ -244,10 +266,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: an attempt to write `state.json` fails with a filesystem
   permission error (EACCES / EPERM).
 - **Message**:
+
   ```
   yci: cannot write state file: <path>
     permission denied — check directory ownership and mode (expected 0700)
   ```
+
 - **Test coverage**: `test_state_io.sh::test_write_permission_denied`
 
 ---
@@ -264,10 +288,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: the target profile YAML file `<data-root>/profiles/<customer-id>.yaml`
   already exists and `--force` was not passed.
 - **Message**:
+
   ```
   yci: profile already exists: <path>
     pass --force to overwrite, or choose a different customer id
   ```
+
 - **Test coverage**: `test_init_profile.sh::test_profile_exists`
 
 ---
@@ -280,10 +306,12 @@ this catalog, the emitting script, and the corresponding test in the same change
 - **Trigger**: the customer ID argument passed to `init-profile.sh` fails the
   format constraint `[a-z0-9][a-z0-9-]*`.
 - **Message**:
+
   ```
   yci: invalid customer id: '<customer>'
     allowed pattern: [a-z0-9][a-z0-9-]*  (lowercase, hyphens only)
   ```
+
 - **Test coverage**: `test_init_profile.sh::test_invalid_customer_id`
 
 ---
@@ -297,11 +325,13 @@ this catalog, the emitting script, and the corresponding test in the same change
   `_template`), indicating a reserved namespace, and `--allow-reserved` was not
   passed.
 - **Message**:
+
   ```
   yci: reserved customer id: '<customer>'
     ids starting with '_' are reserved for internal use
     pass --allow-reserved to create a reserved-namespace profile
   ```
+
 - **Test coverage**: `test_init_profile.sh::test_reserved_id`
 
 ---
@@ -319,16 +349,18 @@ this catalog, the emitting script, and the corresponding test in the same change
   returns exit 1 before the renderer can display any profile. The renderer
   surfaces a shorter, command-oriented message appropriate for interactive use.
 - **Message**:
+
   ```
   yci: no active customer — run /yci:init <customer> or /yci:switch <customer>
   ```
+
 - **Test coverage**: `test_render_whoami.sh::test_no_active_customer`
 
 ---
 
 ## Style Guide
 
-- **`yci:` prefix**: every message begins with `yci: ` so users immediately
+- **`yci:` prefix**: every message begins with `yci:` so users immediately
   identify which tool produced the error, regardless of shell noise around it.
 - **Angle-bracket placeholders**: dynamic parts appear as `<placeholder>` in this
   catalog (e.g., `<path>`, `<field>`, `<customer>`, `<value>`). Scripts substitute

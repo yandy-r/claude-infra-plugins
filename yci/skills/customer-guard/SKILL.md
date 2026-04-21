@@ -65,9 +65,11 @@ Build a JSON object to feed the detection library:
   Use `bash -c 'pwd'` to obtain `<current-working-dir>`.
 
 - **Text blob input**:
+
   ```json
   { "tool_name": "Write", "tool_input": { "content": "<text>" } }
   ```
+
   Escape the text as a valid JSON string value.
 
 ### Step 5 — Run the detection library

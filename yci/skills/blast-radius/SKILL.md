@@ -110,7 +110,7 @@ Two artifact files are written to disk:
 - `<data-root>/artifacts/<customer>/blast-radius/<change_id>.json`
 - `<data-root>/artifacts/<customer>/blast-radius/<change_id>.md`
 
-Both paths are printed to stdout (one per line, prefixed `blast-radius: `).
+Both paths are printed to stdout (one per line, prefixed `blast-radius:`).
 When `--output` is provided alongside `--format both`, it is treated as an error
 and the skill exits 1 with `br-output-conflict` — a single `--output` path
 cannot receive both JSON and markdown outputs. Omit `--output` to use the
@@ -200,7 +200,7 @@ Capture the label JSON on stdout. Propagate non-zero exits verbatim.
   `render-markdown.sh`; write rendered output to stdout or `--output`.
 - `both` → create `<data-root>/artifacts/<customer>/blast-radius/` if it does not
   exist; write `<change_id>.json` and `<change_id>.md` there; print both paths to
-  stdout prefixed `blast-radius: `.
+  stdout prefixed `blast-radius:`.
 
 ## Error Codes
 

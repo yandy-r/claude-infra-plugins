@@ -77,7 +77,6 @@ Examples of invalid IDs: `ACME` (uppercase), `acme_corp` (underscore),
 > reserved for template/example use and rejected by the regex above. See
 > `init-profile.sh` `--allow-reserved` and the `init-reserved-id` entry in
 > `error-messages.md` for the init-side policy.
-
 > The resolver does NOT validate format or profile existence. It returns the
 > trimmed string. Format validation and profile loading are the caller's
 > responsibility.

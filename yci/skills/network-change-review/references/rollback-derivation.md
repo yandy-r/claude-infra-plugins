@@ -21,7 +21,7 @@ markers), then `structured-yaml`, then `structured-yaml-no-reverse`, then
 
 | `diff_kind`                  | Detection                                                                        | Reversal strategy                     | Confidence |
 | ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------- | ---------- |
-| `unified-diff`               | File contains `^--- a/` + `^\+\+\+ b/` + `^@@ ` hunk markers                     | Mechanical reversal (see §3)          | `high`     |
+| `unified-diff`               | File contains `^--- a/` + `^\+\+\+ b/` + `^@@` hunk markers                      | Mechanical reversal (see section 3)   | `high`     |
 | `structured-yaml`            | `yaml.safe_load` yields a dict with top-level `forward:` **and** `reverse:` keys | Emit `reverse:` block verbatim        | `high`     |
 | `structured-yaml-no-reverse` | `yaml.safe_load` yields a dict with `forward:` but **no** `reverse:` key         | Error: `ncr-rollback-missing-reverse` | n/a        |
 | `playbook`                   | YAML or Jinja with no `forward:`/`reverse:` structure (e.g., Ansible playbook)   | Stub + manual derivation marker       | `low`      |
@@ -34,7 +34,7 @@ markers), then `structured-yaml`, then `structured-yaml-no-reverse`, then
 The mechanical reversal for `unified-diff` inputs proceeds in five steps.
 
 **Step 1 — Parse into file diffs.**
-Split the input on `^--- ` boundaries. Each segment is one file diff consisting of:
+Split the input on `^---` boundaries. Each segment is one file diff consisting of:
 
 - A header pair: `--- a/<path>` and `+++ b/<path>`.
 - One or more hunks, each beginning with a `@@ -<s>,<c> +<s>,<c> @@` marker.

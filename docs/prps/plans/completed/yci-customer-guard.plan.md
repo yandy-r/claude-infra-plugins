@@ -123,11 +123,11 @@ $ <tool>: Read { file_path: "~/data/bigbank/inventory.yaml" }
 
 ## External Documentation
 
-| Topic                                   | Source                                              | Key Takeaway                                                                                               |
-| --------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Claude Code hooks (PreToolUse decision) | https://docs.claude.com/en/docs/claude-code/hooks   | PreToolUse reads JSON from stdin and writes a decision JSON to stdout; `permissionDecision: "deny"` blocks |
-| Claude Code plugin hooks registration   | https://docs.claude.com/en/docs/claude-code/plugins | Plugins can register hooks via a `hooks` key in `plugin.json`                                              |
-| `realpath -m` portability               | POSIX / GNU coreutils / BSD man pages               | `-m` is GNU-only; BSD/macOS needs a Python fallback                                                        |
+| Topic                                   | Source                                                | Key Takeaway                                                                                               |
+| --------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Claude Code hooks (PreToolUse decision) | <https://docs.claude.com/en/docs/claude-code/hooks>   | PreToolUse reads JSON from stdin and writes a decision JSON to stdout; `permissionDecision: "deny"` blocks |
+| Claude Code plugin hooks registration   | <https://docs.claude.com/en/docs/claude-code/plugins> | Plugins can register hooks via a `hooks` key in `plugin.json`                                              |
+| `realpath -m` portability               | POSIX / GNU coreutils / BSD man pages                 | `-m` is GNU-only; BSD/macOS needs a Python fallback                                                        |
 
 ---
 
@@ -325,7 +325,7 @@ Validator uses `fail` / `ok` / `warn` helpers, checks existence first, then stru
 - **GOTCHA**: `<placeholder>` tokens are stripped by `assert_error_id` before matching — the FIRST code-block line in each entry after `- **ID**:` is what the helper extracts, so keep distinctive free text there (not the placeholders alone).
 - **VALIDATE**:
   - `wc -l yci/hooks/customer-guard/references/error-messages.md` → ≥ 120 lines
-  - `grep -c '^### `' yci/hooks/customer-guard/references/error-messages.md` → 8
+  - `grep -c '^###' yci/hooks/customer-guard/references/error-messages.md` → 8
   - Markdown renders cleanly in a preview
 
 ### Task 1.2: Per-target capability-gaps doc — Depends on [none]
@@ -498,7 +498,7 @@ Validator uses `fail` / `ok` / `warn` helpers, checks existence first, then stru
 - **WORKTREE**: `~/.claude-worktrees/claude-plugins-yci-customer-guard-4-3/`
 - **ACTION**: Create `yci/commands/guard-check.md` and `yci/skills/customer-guard/SKILL.md`.
 - **IMPLEMENT**:
-  - `yci/commands/guard-check.md` — slash-command wrapper with a 1-paragraph description and `**Load and follow the `yci:customer-guard`skill, passing through`$ARGUMENTS`.**` line (identical pattern to `/ycc:plan`).
+  - `yci/commands/guard-check.md` — slash-command wrapper with a 1-paragraph description and "**Load and follow the `yci:customer-guard` skill, passing through `$ARGUMENTS`.**" line (identical pattern to `/ycc:plan`).
   - `yci/skills/customer-guard/SKILL.md` — frontmatter: `name: customer-guard`, description (≥ 50 chars: "Ad-hoc cross-customer isolation check. Runs the customer-isolation detection library against a single path or text blob and reports allow/deny with the same catalogued errors as the PreToolUse hook."), `argument-hint: '<path-or-text> [--dry-run] [--data-root <path>]'`, `allowed-tools`: `[Read, Bash(cat:*), Bash(test:*), Bash(bash:*), Bash(python3:*)]`. Body: steps to construct a synthetic PreToolUse payload shaped like a `Read` tool call with the argument as `file_path` (OR if the input starts without `/` `~/` `./`, wrap as a `Write`-shape with the text as `content`), then invoke `yci/skills/_shared/customer-isolation/detect.sh` with the payload. Print the decision JSON verbatim to the user; on deny, also print the catalogued error ID.
 - **MIRROR**: `yci/skills/customer-profile/SKILL.md` for frontmatter shape; `/ycc:plan` command pattern for the command wrapper.
 - **IMPORTS**: none.
@@ -512,7 +512,7 @@ Validator uses `fail` / `ok` / `warn` helpers, checks existence first, then stru
 - **BATCH**: B5 (sequential; single-writer file)
 - **ACTION**: UPDATE `scripts/validate-yci-skills.sh`.
 - **IMPLEMENT**: Add two functions after `validate_customer_profile_skill`:
-  - `validate_customer_guard_hook`: check `yci/hooks/customer-guard/hook.json` exists + valid JSON + references `pretool.sh`; each `*.sh` under `yci/hooks/customer-guard/scripts/` is executable with the correct shebang + `set -euo pipefail`; each reference doc under `yci/hooks/customer-guard/references/` exists and is non-empty; `error-messages.md` has ≥ 6 entries (`grep -c '^### `'`); Codex stub starts with `# Advisory only`.
+  - `validate_customer_guard_hook`: check `yci/hooks/customer-guard/hook.json` exists + valid JSON + references `pretool.sh`; each `*.sh` under `yci/hooks/customer-guard/scripts/` is executable with the correct shebang + `set -euo pipefail`; each reference doc under `yci/hooks/customer-guard/references/` exists and is non-empty; `error-messages.md` has ≥ 6 entries (`grep -c '^###'`); Codex stub starts with `# Advisory only`.
   - `validate_customer_isolation_lib`: every `*.sh` under `yci/skills/_shared/customer-isolation/` has the right shebang; every `*.py` passes `python3 -m py_compile`; `detect.sh` sources cleanly (`bash -c 'source detect.sh && declare -F isolation_check_payload'`); `yci/skills/_shared/customer-isolation/tests/run-all.sh` exits 0; `yci/hooks/customer-guard/tests/run-all.sh` exits 0; `shellcheck --severity=warning` clean over both trees.
   - Plugin.json check: `yci/.claude-plugin/plugin.json` parses AND the `hooks` key (when present) resolves to an existing file.
   - Wire both functions into `main()` alongside the existing validators.
@@ -564,33 +564,39 @@ Validator uses `fail` / `ok` / `warn` helpers, checks existence first, then stru
 
 - **BATCH**: B7 (sequential)
 - **ACTION**: From the parent worktree, run the full validation pipeline + manual smoke.
-- **IMPLEMENT**:
-  - `./scripts/validate.sh --only yci,json` → expect green.
-  - `./scripts/validate.sh` (full) → expect green.
-  - Manual smoke test:
-    `bash
-    dr="$(mktemp -d)"
-    mkdir -p "$dr/profiles" "$dr/inventories/acme" "$dr/inventories/bigbank"
-    cat > "$dr/profiles/acme.yaml" <<'EOF'
-customer: { id: "acme", display_name: "Acme Corp" }
-inventory: { path: "inventories/acme" }
-EOF
-    cat > "$dr/profiles/bigbank.yaml" <<'EOF'
-customer: { id: "bigbank", display_name: "Big Bank" }
-inventory: { path: "inventories/bigbank" }
-EOF
-    cat > "$dr/inventories/bigbank/hosts.yaml" <<'EOF'
-hosts: [bb01.bigbank.corp]
-EOF
-    export YCI_CUSTOMER=acme YCI_DATA_ROOT="$dr"
-    printf '%s' '{"tool_name":"Read","tool_input":{"file_path":"'"$dr"'/inventories/bigbank/hosts.yaml"},"cwd":"/tmp"}' \
-      | bash yci/hooks/customer-guard/scripts/pretool.sh
-    # Expect: stdout starts with {"hookSpecificOutput"
-    YCI_GUARD_DRY_RUN=1 printf '%s' '<same payload>' | bash .../pretool.sh
-    # Expect: no stdout; stderr banner; audit.log updated
-    `
+  - **IMPLEMENT**:
+    - `./scripts/validate.sh --only yci,json` → expect green.
+    - `./scripts/validate.sh` (full) → expect green.
+    - Manual smoke test:
+
+      ```bash
+      dr="$(mktemp -d)"
+      mkdir -p "$dr/profiles" "$dr/inventories/acme" "$dr/inventories/bigbank"
+      cat > "$dr/profiles/acme.yaml" <<'EOF'
+      customer: { id: "acme", display_name: "Acme Corp" }
+      inventory: { path: "inventories/acme" }
+      EOF
+      cat > "$dr/profiles/bigbank.yaml" <<'EOF'
+      customer: { id: "bigbank", display_name: "Big Bank" }
+      inventory: { path: "inventories/bigbank" }
+      EOF
+      cat > "$dr/inventories/bigbank/hosts.yaml" <<'EOF'
+      hosts: [bb01.bigbank.corp]
+      EOF
+      export YCI_CUSTOMER=acme YCI_DATA_ROOT="$dr"
+      printf '%s' '{"tool_name":"Read","tool_input":{"file_path":"'"$dr"'/inventories/bigbank/hosts.yaml"},"cwd":"/tmp"}' \
+        | bash yci/hooks/customer-guard/scripts/pretool.sh
+
+      # Expect: stdout starts with {"hookSpecificOutput"
+
+      YCI_GUARD_DRY_RUN=1 printf '%s' '<same payload>' | bash .../pretool.sh
+
+      # Expect: no stdout; stderr banner; audit.log updated
+      ```
+
   - `python3 -m json.tool yci/.claude-plugin/plugin.json` passes.
   - `find yci -name '*.sh' -not -executable` empty.
+
 - **MIRROR**: Project "Testing Changes" conventions from `CLAUDE.md`.
 - **IMPORTS**: none.
 - **GOTCHA**: If `./scripts/validate.sh` (full) fails, DO NOT force-pass. Root-cause the failure — often it's the Codex/Cursor/opencode regeneration detecting drift because a helper from the YCI side got accidentally committed into a generated bundle. No generated file should have changed in this PR; if one did, revert it.

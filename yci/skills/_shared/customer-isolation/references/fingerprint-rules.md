@@ -167,9 +167,11 @@ reduction.
   to a secrets-backend namespace, distinguishing it from arbitrary path strings.
 
 - **`customer-id`**:
+
   ```
   \b[a-z0-9][a-z0-9-]{2,63}\b
   ```
+
   Matches raw customer-ID-shaped tokens. Because this pattern is intentionally
   broad, matches are deduplicated against actual `customer.id` values from loaded
   profiles before a collision is reported. A match that does not equal a known

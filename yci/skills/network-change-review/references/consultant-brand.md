@@ -12,7 +12,7 @@ present in every rendered artifact.
 ## Prepared by
 
 **Consulting:** Yandy Consulting Infrastructure (yci)
-**Contact:** consultant@example.invalid
+**Contact:** <consultant@example.invalid>
 **Skill:** `yci:network-change-review`
 **Version:** {{yci_commit}}
 

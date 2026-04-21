@@ -39,11 +39,13 @@ corresponding test in the same change.
   non-zero — no `$YCI_CUSTOMER`, no `.yci-customer` dotfile, no `state.json` —
   so the hook cannot identify which customer's policy applies.
 - **Message**:
+
   ```
   yci guard: no active customer; refusing to evaluate tool call fail-closed.
     set a customer with /yci:init <customer> or /yci:switch <customer>
     to allow evaluation without an active customer, set YCI_GUARD_FAIL_OPEN=1
   ```
+
 - **Test coverage**: `test_pretool_no_active_customer.sh::test_fail_closed_default`
 
 ---
@@ -56,12 +58,15 @@ corresponding test in the same change.
 - **Trigger**: the active or foreign customer's profile YAML cannot be parsed —
   either the file is syntactically invalid or `yaml.safe_load` raises an exception.
 - **Message**:
+
   ```
   yci guard: failed to load profile YAML for customer '<customer>'.
     <parse-error>
   Verify the profile with /yci:whoami or fix the YAML syntax and retry.
   ```
+
   `<parse-error>` is the verbatim first line of the pyyaml exception message.
+
 - **Test coverage**: `test_inventory_fingerprint.sh::test_malformed_profile`
 
 ---
@@ -75,6 +80,7 @@ corresponding test in the same change.
   resolves under another customer's canonical artifact root rather than the active
   customer's tree.
 - **Message**:
+
   ```
   yci guard: cross-customer path collision.
     active customer:  <active-customer>
@@ -85,6 +91,7 @@ corresponding test in the same change.
     paths:
       - <resolved-path>  # note: SOW/ticket reference required
   ```
+
 - **Test coverage**: `test_pretool_deny_path.sh::test_path_collision`
 
 ---
@@ -97,6 +104,7 @@ corresponding test in the same change.
 - **Trigger**: a candidate token extracted from the tool input matches another
   customer's fingerprint bundle (hostname, IP, account ID, namespace, etc.).
 - **Message**:
+
   ```
   yci guard: cross-customer identifier collision.
     active customer:  <active-customer>
@@ -107,6 +115,7 @@ corresponding test in the same change.
     tokens:
       - <token>  # note: SOW/ticket reference required
   ```
+
 - **Test coverage**: `test_pretool_deny_fingerprint.sh::test_fingerprint_collision`
 
 ---
@@ -119,12 +128,15 @@ corresponding test in the same change.
 - **Trigger**: the allowlist YAML file at the expected path exists but fails to
   parse — `yaml.safe_load` raises an exception indicating malformed YAML.
 - **Message**:
+
   ```
   yci guard: allowlist YAML at '<path>' is malformed.
     <parse-error>
   Reproduce the error with: python3 -c "import yaml; yaml.safe_load(open('<path>'))"
   ```
+
   `<parse-error>` is the verbatim first line of the pyyaml exception message.
+
 - **Test coverage**: `test_allowlist.sh::test_malformed`
 
 ---
@@ -137,12 +149,14 @@ corresponding test in the same change.
 - **Trigger**: `YCI_GUARD_DRY_RUN=1` is set AND a path collision or fingerprint
   collision would otherwise cause the hook to emit a deny decision.
 - **Message**:
+
   ```
   YCI GUARD: DRY-RUN MODE ACTIVE — would-block logged to <path>.
     tool call would have been denied (collision detected)
     audit entry written to: <path>
     set YCI_GUARD_DRY_RUN=0 or unset to enforce blocking
   ```
+
 - **Test coverage**: `test_pretool_dry_run.sh::test_dry_run_would_block`
 
 ---
@@ -155,11 +169,13 @@ corresponding test in the same change.
 - **Trigger**: the JSON received on stdin is missing expected keys (e.g., no
   `tool_input` field), making it impossible to evaluate the call for collisions.
 - **Message**:
+
   ```
   yci guard: tool input missing expected fields; skipping evaluation.
     received keys: <key-list>
     set YCI_GUARD_STRICT=1 to fail-closed on malformed hook input
   ```
+
 - **Test coverage**: `test_pretool_allow.sh::test_missing_fields_fail_open`
 
 ---
@@ -173,6 +189,7 @@ corresponding test in the same change.
   tree by string prefix, but `realpath` resolves the symlink chain to a location
   under a foreign customer's canonical root.
 - **Message**:
+
   ```
   yci guard: symlink escape into another customer's tree.
     link:             <link-path>
@@ -180,6 +197,7 @@ corresponding test in the same change.
     foreign customer: <foreign-customer>
   Remove or retarget the symlink; cross-customer symlinks are not permitted.
   ```
+
 - **Test coverage**: `test_pretool_symlink_escape.sh::test_symlink_escape`
 
 ---
