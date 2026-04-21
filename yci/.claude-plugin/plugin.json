@@ -5,5 +5,5 @@
   "author": {
     "name": "yandy-r"
   },
-  "hooks": "hooks/customer-guard/hook.json"
+  "hooks": "./hooks/customer-guard/hook.json"
 }
