@@ -1,0 +1,10 @@
+Contact api_key=VerySecretTokenValue123 for access.
+AWS AKIAIOSFODNN7EXAMPLE
+Account 123456789012
+IP 10.0.0.1 and IPv6 2001:db8::1
+MAC aa:bb:cc:dd:ee:ff
+ASN AS64512
+Azure 12345678-1234-1234-1234-123456789abc
+Host app.acme-corp.example.com
+SSN 123-45-6789
+MRN # 123456789

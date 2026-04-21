@@ -5,6 +5,7 @@
 #   1. yci/.claude-plugin/plugin.json exists and parses as valid JSON.
 #   2. yci/skills/hello/SKILL.md exists with valid YAML frontmatter.
 #   3. yci/skills/customer-profile — full surface validation.
+#   4. yci/skills/_shared/telemetry-sanitizer — sanitizer + tests.
 #
 # Intentional: no -e flag; validator must aggregate failures.
 set -uo pipefail
@@ -456,6 +457,77 @@ if isinstance(hooks, str):
 # ---------------------------------------------------------------------------
 # customer-isolation library checks
 # ---------------------------------------------------------------------------
+validate_telemetry_sanitizer_lib() {
+    echo "--- telemetry-sanitizer library ---"
+
+    local lib_root="${REPO_ROOT}/yci/skills/_shared/telemetry-sanitizer"
+    local lib_scripts="${lib_root}/scripts"
+    local lib_tests="${lib_root}/tests"
+    local hipaa_rules="${REPO_ROOT}/yci/skills/_shared/compliance-adapters/hipaa/phi-redaction.rules"
+
+    for py in "${lib_scripts}/patterns.py" "${lib_scripts}/sanitize_text.py" "${lib_scripts}/load_adapter_rules.py"; do
+        if [ -f "$py" ]; then
+            if python3 -m py_compile "$py" 2>/dev/null; then
+                ok "$(basename "$py") compiles"
+            else
+                fail "$(basename "$py"): py_compile failed"
+            fi
+        else
+            fail "missing $py"
+        fi
+    done
+
+    for s in sanitize-output.sh pre-write-artifact.sh; do
+        local p="${lib_scripts}/${s}"
+        if ! [ -x "$p" ]; then
+            fail "telemetry script ${s}: not executable or missing"
+            continue
+        fi
+        if ! head -1 "$p" | grep -q '^#!/usr/bin/env bash'; then
+            fail "telemetry script ${s}: wrong shebang"
+            continue
+        fi
+        if head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+            ok "telemetry script ${s}: executable, shebang, set -euo pipefail"
+        else
+            fail "telemetry script ${s}: missing set -euo pipefail in first 20 lines"
+        fi
+    done
+
+    if [ -s "$hipaa_rules" ]; then
+        ok "hipaa/phi-redaction.rules present"
+    else
+        fail "hipaa/phi-redaction.rules missing or empty"
+    fi
+
+    if [ -x "${lib_tests}/run-all.sh" ]; then
+        printf '\n--- telemetry-sanitizer unit tests ---\n'
+        if bash "${lib_tests}/run-all.sh"; then
+            ok "telemetry-sanitizer unit tests pass"
+        else
+            fail "telemetry-sanitizer unit tests failed"
+        fi
+    else
+        fail "telemetry-sanitizer tests/run-all.sh missing or not executable"
+    fi
+
+    printf '\n--- shellcheck (telemetry-sanitizer) ---\n'
+    if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
+        local sc_files=()
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${lib_scripts}/sanitize-output.sh" "${lib_scripts}/pre-write-artifact.sh" 2>/dev/null)
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${lib_tests}/run-all.sh" "${lib_tests}/helpers.sh" "${lib_tests}/"test_*.sh 2>/dev/null)
+        if "$SHELLCHECK_BIN" --severity=warning "${sc_files[@]}"; then
+            ok "shellcheck clean on telemetry-sanitizer (${#sc_files[@]} files)"
+        else
+            fail "shellcheck reported warnings/errors (telemetry-sanitizer)"
+        fi
+    else
+        warn "shellcheck not installed — skipping"
+    fi
+}
+
 validate_customer_isolation_lib() {
     echo "--- customer-isolation library ---"
 
@@ -576,6 +648,8 @@ main() {
     validate_customer_guard_hook
     echo
     validate_customer_isolation_lib
+    echo
+    validate_telemetry_sanitizer_lib
     echo
 
     if [ "$ERRORS" -eq 0 ]; then
