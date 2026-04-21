@@ -1,0 +1,65 @@
+# Golden fixture — fully-populated profile exercising every schema.md field.
+# All enum values are drawn verbatim from profile-schema.sh.
+# Used by: test_render_whoami.sh::test_whoami_full_profile
+
+customer:
+  id: acme
+  display_name: ACME Corporation
+  code: ACM
+  branding:
+    color: '#0055AA'
+    logo_path: '~/customers/acme/logo.png'
+
+engagement:
+  id: eng-acme-2026-q1
+  type: implementation
+  sow_ref: SOW-ACM-2026-001
+  scope_tags:
+    - network-automation
+    - compliance-audit
+  start_date: '2026-01-15'
+  end_date: '2026-06-30'
+
+compliance:
+  regime: hipaa
+  evidence_schema_version: 1
+  baa_reference: BAA-ACM-2026-001
+
+change_window:
+  adapter: json-schedule
+  source: '~/.config/yci/change-windows/acme.json'
+  timezone: America/New_York
+
+inventory:
+  adapter: netbox
+  endpoint: https://netbox.acme.internal
+  credential_ref: vault://ops/acme/netbox
+  path: /api/dcim/devices
+
+approval:
+  adapter: jira
+  endpoint: https://jira.acme.internal
+  credential_ref: vault://ops/acme/jira
+
+vaults:
+  path: op://ACME-Ops/main
+
+deliverable:
+  format:
+    - markdown
+  header_template: 'Deliverable for ACME Corporation — {engagement.id}'
+  handoff_format: git-repo
+  path: /mnt/deliverables/acme
+
+vendor_tooling:
+  - vendor: hashicorp
+    product: terraform
+    version: '1.7'
+  - vendor: redhat
+    product: ansible
+    version: '2.16'
+
+safety:
+  default_posture: review
+  change_window_required: true
+  scope_enforcement: warn

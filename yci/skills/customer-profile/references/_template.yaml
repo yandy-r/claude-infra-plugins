@@ -1,0 +1,86 @@
+# yci customer profile — TEMPLATE
+#
+# This file is the scaffold copied by `/yci:init <customer>` into
+# <data-root>/profiles/<customer>.yaml. Never commit an operational profile;
+# operational profiles contain customer-sensitive data and live only in the
+# operator's runtime data root (default: ~/.config/yci/profiles/).
+#
+# See:
+#   - yci/skills/customer-profile/references/schema.md  (field reference)
+#   - yci/CONTRIBUTING.md                               (scope guardrails)
+#   - docs/prps/prds/yci.prd.md §5.2                    (authoritative schema)
+#   - docs/prps/prds/yci.prd.md §11.9                   (no-secrets rule)
+#
+# Rules:
+#   - Replace every <TODO: ...> placeholder before switching to this profile.
+#   - Uncomment and populate optional blocks as needed.
+#   - NO SECRETS. Use credential_ref: <vault-path> pointers, never inline values.
+
+customer:
+  id: '<TODO: lowercase-kebab-case-id>'
+  display_name: '<TODO: human-readable name>'
+  # code: "<TODO: optional internal billing / project code>"
+  # branding:
+  #   logo_path: "<TODO: path to customer logo file>"
+  #   color: "<TODO: hex color e.g. #003366>"
+
+engagement:
+  id: '<TODO: engagement-id e.g. acme-2026-network-refresh>'
+  type: '<TODO: discovery|design|implementation|ongoing>'
+  sow_ref: '<TODO: SOW document reference e.g. SOW-2026-0117>'
+  scope_tags:
+    - '<TODO: e.g. network-automation>'
+  start_date: '<TODO: YYYY-MM-DD>'
+  end_date: '<TODO: YYYY-MM-DD>'
+
+compliance:
+  regime: '<TODO: hipaa|pci|sox|soc2|iso27001|nist|commercial|none>'
+  # baa_reference: "<TODO: BAA document reference — HIPAA engagements only>"
+  evidence_schema_version: '<TODO: integer e.g. 1>'
+
+# change_window:
+#   adapter: "<TODO: ical|servicenow-cab|json-schedule|always-open|none>"
+#   source: "<TODO: path or URL to calendar source>"
+#   timezone: "<TODO: IANA timezone e.g. America/New_York>"
+
+inventory:
+  adapter: '<TODO: file|netbox|nautobot|servicenow-cmdb|infoblox>'
+  # endpoint: "<TODO: API base URL — adapter-dependent>"
+  # credential_ref: "<TODO: vault path — NEVER an inline secret>"
+  # path: "<TODO: optional path override e.g. ~/Dropbox-Acme/inventories/>"
+
+approval:
+  adapter: '<TODO: github-pr|email-signoff|jira|servicenow-request|none>'
+  # endpoint: "<TODO: API base URL — adapter-dependent>"
+  # credential_ref: "<TODO: vault path — NEVER an inline secret>"
+
+# vaults:
+#   path: "<TODO: vault URI or path — NEVER an inline secret>"
+#   # Common path patterns:
+#   #   op://vault-name                    (1Password — use op:// scheme)
+#   #   hcv://secret/acme                  (HashiCorp Vault — use hcv:// scheme)
+#   #   asm://prefix                       (AWS Secrets Manager — use asm:// scheme)
+#   #   ~/.config/yci/vaults/<customer>    (default on-disk, encrypted with age/sops)
+
+deliverable:
+  format:
+    - '<TODO: markdown|pdf|word|confluence>'
+  header_template: '<TODO: path to dual-branded header template e.g. ~/.config/yci/branding/acme-header.md>'
+  handoff_format: '<TODO: git-repo|zip|confluence|pdf-bundle>'
+  # path: "<TODO: optional output path override>"
+  # Common consulting patterns for path:
+  #   ~/Dropbox-Acme/deliverables/        (Dropbox desktop-synced)
+  #   ~/OneDrive-Acme/deliverables/       (OneDrive desktop-synced)
+  #   ~/gdrive/Acme/deliverables/         (rclone or Google Drive for Desktop)
+  #   /Volumes/Acme-NAS/deliverables/     (shared network drive)
+  #   ~/Encrypted-Customers/acme/         (separate encrypted volume)
+
+# vendor_tooling:
+#   - vendor: "<TODO: e.g. cisco>"
+#     product: "<TODO: e.g. ios-xe>"
+#     version: "<TODO: e.g. 17.9>"
+
+safety:
+  default_posture: '<TODO: dry-run|review|apply>'
+  change_window_required: '<TODO: true|false>'
+  scope_enforcement: '<TODO: warn|block|off>'
