@@ -7,6 +7,7 @@ Writes atomic cache at <data-root>/.cache/customer-isolation/<customer>.json.
 """
 
 import argparse
+import contextlib
 import datetime
 import ipaddress
 import json
@@ -47,7 +48,9 @@ _IPV6_PATTERN = (
 )
 
 CATEGORY_REGEXES: dict[str, re.Pattern[str]] = {
-    "ipv4": re.compile(r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}" r"(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"),
+    "ipv4": re.compile(
+        r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}" r"(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
+    ),
     "ipv6": re.compile(_IPV6_PATTERN),
     "hostname": re.compile(
         r"\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+\b",
@@ -293,10 +296,7 @@ def _scan_inventory(inv_dir: str, tokens: dict[str, set[str]]) -> None:
         lower = fpath.lower()
         try:
             with open(fpath) as fh:
-                if lower.endswith((".yaml", ".yml")):
-                    data = yaml.safe_load(fh)
-                else:
-                    data = json.load(fh)
+                data = yaml.safe_load(fh) if lower.endswith((".yaml", ".yml")) else json.load(fh)
         except Exception as exc:
             print(
                 f"warn: skipping unparseable inventory file {fpath}: {exc}",
@@ -343,20 +343,16 @@ def _extract_profile_tokens(profile: dict, tokens: dict[str, set[str]]) -> None:
 def _max_mtime_quick(inv_dir: str, profile_path: str) -> float:
     """Return max mtime across profile YAML and all inventory files (stat only)."""
     mtimes: list[float] = []
-    try:
+    with contextlib.suppress(OSError):
         mtimes.append(os.stat(profile_path).st_mtime)
-    except OSError:
-        pass
 
     if os.path.isdir(inv_dir):
         for dirpath, _dirnames, filenames in os.walk(inv_dir):
             for fname in filenames:
                 lower = fname.lower()
                 if lower.endswith((".yaml", ".yml", ".json")):
-                    try:
+                    with contextlib.suppress(OSError):
                         mtimes.append(os.stat(os.path.join(dirpath, fname)).st_mtime)
-                    except OSError:
-                        pass
 
     return max(mtimes) if mtimes else 0.0
 
@@ -398,26 +394,20 @@ def _write_cache(cache_file: str, bundle: dict) -> None:
             json.dump(bundle, fh, indent=2)
             fh.write("\n")
             fh.flush()
-            try:
+            # fsync is best-effort — e.g. on tmpfs or unsupported FS
+            with contextlib.suppress(OSError):
                 os.fsync(fh.fileno())
-            except OSError:
-                # fsync is best-effort — e.g. on tmpfs or unsupported FS
-                pass
         os.replace(tmp_path, cache_file)
         tmp_path = ""  # replaced, nothing to clean
     except OSError as exc:
         print(f"warn: cache unwritable at {cache_file}: {exc}", file=sys.stderr)
     finally:
         if tmp_fd >= 0:
-            try:
+            with contextlib.suppress(OSError):
                 os.close(tmp_fd)
-            except OSError:
-                pass
         if tmp_path:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
 
 
 def _try_load_cache(
@@ -478,7 +468,10 @@ def _build_bundle(
     tokens_out: dict[str, list[str]] = {cat: sorted(token_sets[cat]) for cat in CATEGORY_REGEXES}
 
     generated_at = (
-        datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        datetime.datetime.now(datetime.UTC)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
     )
 
     return {

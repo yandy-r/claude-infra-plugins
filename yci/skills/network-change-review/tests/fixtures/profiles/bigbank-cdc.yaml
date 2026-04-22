@@ -5,13 +5,13 @@
 
 customer:
   id: bigbank-cdc
-  display_name: 'BigBank CDC'
-  sow_ref: 'SOW-BBK-2025-07'
+  display_name: "BigBank CDC"
+  sow_ref: "SOW-BBK-2025-07"
 
 engagement:
   id: bbk-network-review-2025
   type: implementation
-  sow_ref: 'SOW-BBK-2025-07'
+  sow_ref: "SOW-BBK-2025-07"
   scope_tags: [network, edge-routers, dc2]
   start_date: 2025-07-01
   end_date: 2026-06-30

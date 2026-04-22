@@ -35,3 +35,9 @@ __pycache__/
 # Version control
 .git/
 CHANGELOG.md
+
+# Test fixtures — input data samples, not project docs
+yci/skills/*/tests/fixtures/
+
+# Completed PRP archives — historical record, not maintained
+docs/prps/plans/completed/

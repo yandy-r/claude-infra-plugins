@@ -41,7 +41,9 @@ def patterns_secrets_and_pem() -> list[PatternSpec]:
 
 
 def patterns_network_ids() -> list[PatternSpec]:
-    ipv4 = r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+    ipv4 = (
+        r"(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+    )
     # Simplified IPv6 (covers common shapes; corpus tests use non-compressed)
     # Full and compressed IPv6 (common operational shapes)
     ipv6 = (
@@ -75,7 +77,10 @@ def patterns_cloud_accounts() -> list[PatternSpec]:
         ),
         PatternSpec(
             "azure_subscription_guid",
-            _c(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-" r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"),
+            _c(
+                r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+                r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
+            ),
             "[REDACTED_AZURE_GUID]",
         ),
     ]

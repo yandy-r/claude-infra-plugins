@@ -2,15 +2,13 @@
 
 ## Summary
 
-Implemented the load-bearing `yci` customer-guard PreToolUse hook that blocks any
-Claude Code tool call, artifact write, or string input referencing a customer
-different from the active profile. Detection lives in a reusable library at
-`yci/skills/_shared/customer-isolation/` (Python extractors + Bash orchestrator)
-so it can be consumed by the hook, the `/yci:guard-check` slash command, and
-future hooks (P0.2 context-guard, P0.4 scope-gate). Claude Code ships a real
-blocking hook registered via the plugin manifest; Cursor / Codex / opencode
-ship documented capability gaps (anti-parity stance mirrored from
-`ycc:hooks-workflow`).
+Implemented the load-bearing `yci` customer-guard PreToolUse hook that blocks any Claude Code tool
+call, artifact write, or string input referencing a customer different from the active profile.
+Detection lives in a reusable library at `yci/skills/_shared/customer-isolation/` (Python
+extractors + Bash orchestrator) so it can be consumed by the hook, the `/yci:guard-check` slash
+command, and future hooks (P0.2 context-guard, P0.4 scope-gate). Claude Code ships a real blocking
+hook registered via the plugin manifest; Cursor / Codex / opencode ship documented capability gaps
+(anti-parity stance mirrored from `ycc:hooks-workflow`).
 
 ## Assessment vs Reality
 
@@ -24,8 +22,8 @@ ship documented capability gaps (anti-parity stance mirrored from
 
 - **Mode**: Parallel sub-agents (Path B — standalone `ycc:implementor` agents)
 - **Worktree**: OFF (`--no-worktree` flag)
-- **Batches**: 7 batches executed sequentially; tasks within each batch
-  dispatched as concurrent `Agent` calls.
+- **Batches**: 7 batches executed sequentially; tasks within each batch dispatched as concurrent
+  `Agent` calls.
 - **Parallel width**: 3 (Batches 1, 2, 4), 2 (Batches 3, 6), 1 (Batches 5, 7)
 
 ## Tasks Completed
@@ -118,25 +116,58 @@ Totals: ~4,990 lines across 42 new files.
 
 ## Deviations from Plan
 
-1. **`load-profile.sh` flag shape (Task 2.3)** — The plan assumed `--data-root / --customer / --format json` flags, but the actual script uses positional arguments: `load-profile.sh <data-root> <customer>`. The agent correctly read the script first and adapted the subprocess call to positional form. Documented inline in the new Python script.
+1. **`load-profile.sh` flag shape (Task 2.3)** — The plan assumed
+   `--data-root / --customer / --format json` flags, but the actual script uses positional
+   arguments: `load-profile.sh <data-root> <customer>`. The agent correctly read the script first
+   and adapted the subprocess call to positional form. Documented inline in the new Python script.
 
-2. **`detect.sh` foreign-customer enumeration (Task 3.2 + post-batch fix)** — The original logic used `basename "$f" .yaml` on every `*.yaml` file in `profiles/`, which incorrectly picks up `<customer>.allowlist.yaml` files as separate "foreign customers". Added a `*.allowlist` case filter alongside the existing `_*` skip. Fixed in-place before Batch 5; verified by the unit-test suite.
+2. **`detect.sh` foreign-customer enumeration (Task 3.2 + post-batch fix)** — The original logic
+   used `basename "$f" .yaml` on every `*.yaml` file in `profiles/`, which incorrectly picks up
+   `<customer>.allowlist.yaml` files as separate "foreign customers". Added a `*.allowlist` case
+   filter alongside the existing `_*` skip. Fixed in-place before Batch 5; verified by the unit-test
+   suite.
 
-3. **bash 5.3 `set -e` regression in pretool.sh (Task 4.2 + Task 6.1)** — On bash 5.3, a failing command substitution on the RHS of an assignment triggers `set -e` exit even though the assignment itself succeeds. Original code was `ACTIVE_OUT="$(bash "$RESOLVE" 2>&1)"; ACTIVE_RC=$?` which exits before reaching the fail-closed branch. Fixed by pre-initializing `ACTIVE_RC=0` and using the `|| ACTIVE_RC=$?` idiom to suppress the early exit.
+3. **bash 5.3 `set -e` regression in pretool.sh (Task 4.2 + Task 6.1)** — On bash 5.3, a failing
+   command substitution on the RHS of an assignment triggers `set -e` exit even though the
+   assignment itself succeeds. Original code was
+   `ACTIVE_OUT="$(bash "$RESOLVE" 2>&1)"; ACTIVE_RC=$?` which exits before reaching the fail-closed
+   branch. Fixed by pre-initializing `ACTIVE_RC=0` and using the `|| ACTIVE_RC=$?` idiom to suppress
+   the early exit.
 
-4. **Sourceable-library executable convention (Task 7.1)** — Plan's per-task specs (3.1, 3.2, 4.2) said "DO NOT chmod +x" sourceable libraries, but the repo-wide convention (see `yci/skills/customer-profile/scripts/state-io.sh`) is that sourceable libraries ARE executable — they just don't self-enable `set -euo pipefail` at file scope. Aligned with repo convention: chmod +x'd all 4 sourceable libraries (`decision-json.sh`, `path-match.sh`, `allowlist.sh`, `detect.sh`) and updated the new validator functions to accept executable-but-no-set-euo as valid.
+4. **Sourceable-library executable convention (Task 7.1)** — Plan's per-task specs (3.1, 3.2, 4.2)
+   said "DO NOT chmod +x" sourceable libraries, but the repo-wide convention (see
+   `yci/skills/customer-profile/scripts/state-io.sh`) is that sourceable libraries ARE executable —
+   they just don't self-enable `set -euo pipefail` at file scope. Aligned with repo convention:
+   chmod +x'd all 4 sourceable libraries (`decision-json.sh`, `path-match.sh`, `allowlist.sh`,
+   `detect.sh`) and updated the new validator functions to accept executable-but-no-set-euo as
+   valid.
 
-5. **Additional documentation regex compile verification (Task 1.3)** — The plan said "not here" for regex compile validation, but the agent verified all 7 regexes compile cleanly in Python as part of VALIDATE. No change to the deliverable; just a stronger validation.
+5. **Additional documentation regex compile verification (Task 1.3)** — The plan said "not here" for
+   regex compile validation, but the agent verified all 7 regexes compile cleanly in Python as part
+   of VALIDATE. No change to the deliverable; just a stronger validation.
 
 ## Issues Encountered
 
-1. **zsh vs bash during smoke-testing** — My initial between-batch smoke test ran under zsh (the user's interactive shell), where `BASH_SOURCE[0]` is empty. The detect.sh guards fell back to a cwd-relative path and all sourced helpers failed. Re-ran under an explicit `bash -c` subshell and everything worked. Documented in the smoke-test commands so future tests always wrap in `bash -c`.
+1. **zsh vs bash during smoke-testing** — My initial between-batch smoke test ran under zsh (the
+   user's interactive shell), where `BASH_SOURCE[0]` is empty. The detect.sh guards fell back to a
+   cwd-relative path and all sourced helpers failed. Re-ran under an explicit `bash -c` subshell and
+   everything worked. Documented in the smoke-test commands so future tests always wrap in
+   `bash -c`.
 
-2. **Test fixture schema strictness** — Minimal test profiles (`customer` + `inventory` only) fail `load-profile.sh`'s schema validation. All fixtures in both test suites were built using the full required-field template (13 top-level + nested fields). Documented inline in both test helpers.
+2. **Test fixture schema strictness** — Minimal test profiles (`customer` + `inventory` only) fail
+   `load-profile.sh`'s schema validation. All fixtures in both test suites were built using the full
+   required-field template (13 top-level + nested fields). Documented inline in both test helpers.
 
-3. **`customer-id` token false-positives in allowlist-bypass tests** — The `customer-id` category regex is intentionally loose (`[a-z0-9][a-z0-9-]{2,63}`) and matches the foreign customer's id anywhere in the payload. For `test_pretool_allowlist_pass.sh`, allowlisting only the path leaves the foreign customer-id token as a second deny trigger. Worked around by using a fictional customer name (`zbank` with `zhost01.zbank.net`) and allowlisting both the path prefix AND the `customer-id:zbank` token. This correctly exercises full-bypass semantics.
+3. **`customer-id` token false-positives in allowlist-bypass tests** — The `customer-id` category
+   regex is intentionally loose (`[a-z0-9][a-z0-9-]{2,63}`) and matches the foreign customer's id
+   anywhere in the payload. For `test_pretool_allowlist_pass.sh`, allowlisting only the path leaves
+   the foreign customer-id token as a second deny trigger. Worked around by using a fictional
+   customer name (`zbank` with `zhost01.zbank.net`) and allowlisting both the path prefix AND the
+   `customer-id:zbank` token. This correctly exercises full-bypass semantics.
 
-4. **`__pycache__` artifacts** — Running `py_compile` during validation generated `.pyc` files under `__pycache__`. The repo `.gitignore` covers `__pycache__/` so these wouldn't be tracked, but cleaned up manually to keep the working tree tidy.
+4. **`__pycache__` artifacts** — Running `py_compile` during validation generated `.pyc` files under
+   `__pycache__`. The repo `.gitignore` covers `__pycache__/` so these wouldn't be tracked, but
+   cleaned up manually to keep the working tree tidy.
 
 ## Tests Written
 
@@ -161,6 +192,9 @@ Totals: ~4,990 lines across 42 new files.
 
 - [ ] Code review via `/ycc:code-review`
 - [ ] Create PR via `/ycc:prp-pr`
-- [ ] Follow-up: Phase 1a generator extension (cross-target `yci` bundle emission for Cursor / Codex / opencode)
-- [ ] Follow-up: Phase 1b functional hook implementations for non-Claude targets per `references/capability-gaps.md`
-- [ ] Follow-up: validator tightening to flag allowlist entries without `note:` field (documented in README as known future work)
+- [ ] Follow-up: Phase 1a generator extension (cross-target `yci` bundle emission for Cursor / Codex
+      / opencode)
+- [ ] Follow-up: Phase 1b functional hook implementations for non-Claude targets per
+      `references/capability-gaps.md`
+- [ ] Follow-up: validator tightening to flag allowlist entries without `note:` field (documented in
+      README as known future work)

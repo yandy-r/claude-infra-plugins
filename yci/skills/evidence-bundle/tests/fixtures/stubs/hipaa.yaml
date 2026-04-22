@@ -4,7 +4,7 @@ change_summary: HIPAA change summary
 customer_id: test
 profile_commit: abc123
 yci_commit: def456
-timestamp_utc: '2026-04-21T14:45:00Z'
+timestamp_utc: "2026-04-21T14:45:00Z"
 approver: ops@example.com
 compliance_regime: hipaa
 rollback_plan_path: hipaa.rollback.txt

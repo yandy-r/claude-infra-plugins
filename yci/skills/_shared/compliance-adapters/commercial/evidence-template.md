@@ -5,11 +5,8 @@
 
 ---
 
-schema: commercial/1
-change_id: {{change_id}}
-timestamp_utc: {{timestamp_utc}}
-approver: {{approver}}
-profile_commit: {{profile_commit}}
+schema: commercial/1 change_id: {{change_id}} timestamp_utc: {{timestamp_utc}} approver:
+{{approver}} profile_commit: {{profile_commit}}
 
 ---
 
@@ -21,13 +18,11 @@ profile_commit: {{profile_commit}}
 
 ## Pre-Check Artifacts
 
-{{#each pre_check_artifacts}}- {{this}}
-{{/each}}
+{{#each pre_check_artifacts}}- {{this}} {{/each}}
 
 ## Post-Check Artifacts
 
-{{#each post_check_artifacts}}- {{this}}
-{{/each}}
+{{#each post_check_artifacts}}- {{this}} {{/each}}
 
 ## Rollback Plan
 

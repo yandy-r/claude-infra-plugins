@@ -18,7 +18,12 @@ from load_adapter_rules import (  # noqa: E402
     discover_redaction_rules,
     load_adapter_rules,
 )
-from patterns import PatternSpec, apply_pattern_list, build_core_patterns, redact_generic_kv_secrets  # noqa: E402
+from patterns import (  # noqa: E402
+    PatternSpec,
+    apply_pattern_list,
+    build_core_patterns,
+    redact_generic_kv_secrets,
+)
 
 
 def _read_profile(path: Path | None) -> dict | None:
@@ -110,10 +115,7 @@ def main() -> None:
 
     profile = _read_profile(args.profile_json)
 
-    if args.path:
-        text = Path(args.path).read_text(encoding="utf-8")
-    else:
-        text = sys.stdin.read()
+    text = Path(args.path).read_text(encoding="utf-8") if args.path else sys.stdin.read()
 
     out = sanitize(
         text,

@@ -1,6 +1,7 @@
 ---
-description: Print the active yci customer (id, display name, engagement, compliance regime, safety posture).
-argument-hint: '[--data-root <path>]'
+description:
+  Print the active yci customer (id, display name, engagement, compliance regime, safety posture).
+argument-hint: "[--data-root <path>]"
 allowed-tools:
   - Read
   - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
@@ -11,7 +12,8 @@ allowed-tools:
 
 # /yci:whoami
 
-Print the active yci customer context — a human-readable summary of who `yci` currently thinks you are operating for.
+Print the active yci customer context — a human-readable summary of who `yci` currently thinks you
+are operating for.
 
 ## What it does
 
@@ -23,7 +25,7 @@ Print the active yci customer context — a human-readable summary of who `yci` 
 - Loads and schema-validates the resolved profile.
 - Renders a concise summary:
 
-```
+```text
 yci: active customer = <customer.id>
   display name   : <customer.display_name>
   engagement     : <engagement.id> (<engagement.type>, SOW <engagement.sow_ref>)
@@ -39,7 +41,8 @@ yci: active customer = <customer.id>
 
 ## Failure modes
 
-- No active customer → exit 1 with the canonical refusal message pointing at `/yci:init` or `/yci:switch`.
+- No active customer → exit 1 with the canonical refusal message pointing at `/yci:init` or
+  `/yci:switch`.
 - Stored active customer's profile is missing or malformed → propagate the loader error.
 
 ## Instructions

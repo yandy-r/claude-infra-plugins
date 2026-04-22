@@ -1,6 +1,6 @@
 ---
 description: Load a yci customer profile and mark it active.
-argument-hint: '<customer> [--data-root <path>]'
+argument-hint: "<customer> [--data-root <path>]"
 allowed-tools:
   - Read
   - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
@@ -18,7 +18,8 @@ Load a yci customer profile from `<data-root>/profiles/<customer>.yaml` and mark
 - Validates `<customer>` against the id format `[a-z0-9][a-z0-9-]*`.
 - Loads and schema-validates the YAML profile (see `yci:customer-profile` → `references/schema.md`).
 - Writes the resolved id to `<data-root>/state.json` and updates the MRU list.
-- Prints a one-line confirmation: `yci: switched to <customer> (<engagement.id>, <compliance.regime>, <safety.default_posture>)`.
+- Prints a one-line confirmation:
+  `yci: switched to <customer> (<engagement.id>, <compliance.regime>, <safety.default_posture>)`.
 
 ## Arguments
 
@@ -27,7 +28,8 @@ Load a yci customer profile from `<data-root>/profiles/<customer>.yaml` and mark
 
 ## Precedence for the active customer
 
-This command SETS the active customer. Subsequent `/yci:whoami` calls without args read it back via the four-tier chain:
+This command SETS the active customer. Subsequent `/yci:whoami` calls without args read it back via
+the four-tier chain:
 
 1. `$YCI_CUSTOMER` env var
 2. `.yci-customer` dotfile (walk-up)

@@ -2,22 +2,20 @@
 
 ## 1. Purpose
 
-This document defines the reversal rules per diff shape that `derive-rollback.sh`
-must implement. Auto-derivation of rollback plans is required by issue #32 AC4
-("Rollback plan auto-derived by reversing the diff"). Mechanical reversal is the
-default and preferred path; manual derivation is acceptable **only** when flagged by
-a `confidence: low` marker so the operator sees the warning before applying the
-rollback. The script must never silently produce a rollback plan it cannot verify is
-correct — failing loud is safer than failing quiet.
+This document defines the reversal rules per diff shape that `derive-rollback.sh` must implement.
+Auto-derivation of rollback plans is required by issue #32 AC4 ("Rollback plan auto-derived by
+reversing the diff"). Mechanical reversal is the default and preferred path; manual derivation is
+acceptable **only** when flagged by a `confidence: low` marker so the operator sees the warning
+before applying the rollback. The script must never silently produce a rollback plan it cannot
+verify is correct — failing loud is safer than failing quiet.
 
 ---
 
 ## 2. Supported `diff_kind` Values
 
-The script determines `diff_kind` by inspecting the raw input file before any
-reversal logic runs. Detection order matters: check `unified-diff` first (byte-level
-markers), then `structured-yaml`, then `structured-yaml-no-reverse`, then
-`playbook`, then `unknown`.
+The script determines `diff_kind` by inspecting the raw input file before any reversal logic runs.
+Detection order matters: check `unified-diff` first (byte-level markers), then `structured-yaml`,
+then `structured-yaml-no-reverse`, then `playbook`, then `unknown`.
 
 | `diff_kind`                  | Detection                                                                        | Reversal strategy                     | Confidence |
 | ---------------------------- | -------------------------------------------------------------------------------- | ------------------------------------- | ---------- |
@@ -33,24 +31,22 @@ markers), then `structured-yaml`, then `structured-yaml-no-reverse`, then
 
 The mechanical reversal for `unified-diff` inputs proceeds in five steps.
 
-**Step 1 — Parse into file diffs.**
-Split the input on `^---` boundaries. Each segment is one file diff consisting of:
+**Step 1 — Parse into file diffs.** Split the input on `^---` boundaries. Each segment is one file
+diff consisting of:
 
 - A header pair: `--- a/<path>` and `+++ b/<path>`.
 - One or more hunks, each beginning with a `@@ -<s>,<c> +<s>,<c> @@` marker.
 
-**Step 2 — Swap header paths.**
-Exchange the paths in the `---` and `+++` lines:
+**Step 2 — Swap header paths.** Exchange the paths in the `---` and `+++` lines:
 
 - `--- a/X` becomes `--- a/X` (the `a/` side now receives the original `b/` path).
 - `+++ b/X` becomes `+++ b/X` (the `b/` side now receives the original `a/` path).
 
-Concretely: if the forward diff reads `--- a/foo` / `+++ b/foo`, the reversed diff
-reads the same (for in-place edits). For file creation/deletion cases (§ gotchas),
-`/dev/null` swaps with the real path.
+Concretely: if the forward diff reads `--- a/foo` / `+++ b/foo`, the reversed diff reads the same
+(for in-place edits). For file creation/deletion cases (§ gotchas), `/dev/null` swaps with the real
+path.
 
-**Step 3 — Flip hunk lines.**
-For each hunk:
+**Step 3 — Flip hunk lines.** For each hunk:
 
 - Every line beginning with `+` becomes `-`.
 - Every line beginning with `-` becomes `+`.
@@ -60,63 +56,54 @@ After flipping, recompute the hunk header counts from the resulting content:
 
 - `old_count` = number of `-` lines + number of context lines in the flipped hunk.
 - `new_count` = number of `+` lines + number of context lines in the flipped hunk.
-- `old_start` and `new_start` are derived from the original hunk positions adjusted
-  for the flip. The simplest correct approach is to reparse the hunk line-by-line
-  after flipping and recount.
+- `old_start` and `new_start` are derived from the original hunk positions adjusted for the flip.
+  The simplest correct approach is to reparse the hunk line-by-line after flipping and recount.
 
-**Step 4 — Reverse hunk order (optional, cosmetic).**
-Reversing the sequence of hunks within each file diff so they appear bottom-to-top
-produces a rollback that reads more naturally as "undo". The patch semantics are
-identical either way. Implementations SHOULD reverse hunk order for readability but
-MAY skip it.
+**Step 4 — Reverse hunk order (optional, cosmetic).** Reversing the sequence of hunks within each
+file diff so they appear bottom-to-top produces a rollback that reads more naturally as "undo". The
+patch semantics are identical either way. Implementations SHOULD reverse hunk order for readability
+but MAY skip it.
 
-**Step 5 — Re-emit as unified diff.**
-Write the reversed file diffs to stdout in the same unified-diff format. The output
-must be parseable by `patch -R` applied to the original (un-changed) files.
+**Step 5 — Re-emit as unified diff.** Write the reversed file diffs to stdout in the same
+unified-diff format. The output must be parseable by `patch -R` applied to the original (un-changed)
+files.
 
 ### Round-Trip Property
 
-`reverse(reverse(diff)) == diff` modulo optional hunk-order reversal and
-insignificant trailing whitespace. This property **must** be exercised by a unit
-test (step 5.2 in the implementation plan will own this test). Any implementation
-that violates the round-trip property is incorrect.
+`reverse(reverse(diff)) == diff` modulo optional hunk-order reversal and insignificant trailing
+whitespace. This property **must** be exercised by a unit test (step 5.2 in the implementation plan
+will own this test). Any implementation that violates the round-trip property is incorrect.
 
 ### Known Gotchas
 
-**File creation / deletion.**
-A new-file diff uses `--- /dev/null` (old side) and `+++ b/<path>` (new side), with
-all hunk lines prefixed `+`. Reversal must:
+**File creation / deletion.** A new-file diff uses `--- /dev/null` (old side) and `+++ b/<path>`
+(new side), with all hunk lines prefixed `+`. Reversal must:
 
 - Swap: `--- a/<path>` / `+++ /dev/null` (becomes a deletion).
 - Flip all `+` → `-`.
 
-A deletion diff uses `--- a/<path>` / `+++ /dev/null`, with all `-` lines. Reversal
-must:
+A deletion diff uses `--- a/<path>` / `+++ /dev/null`, with all `-` lines. Reversal must:
 
 - Swap: `--- /dev/null` / `+++ b/<path>` (becomes a creation).
 - Flip all `-` → `+`.
 
-Failing to handle `/dev/null` correctly turns a file-create rollback into a
-no-op (patching `/dev/null` succeeds silently and the file remains).
+Failing to handle `/dev/null` correctly turns a file-create rollback into a no-op (patching
+`/dev/null` succeeds silently and the file remains).
 
-**Empty hunks.**
-Zero-line change hunks are not produced by standard `diff -u` output but may appear
-in vendor-generated or hand-edited diffs. Preserve them verbatim — do not skip or
-collapse.
+**Empty hunks.** Zero-line change hunks are not produced by standard `diff -u` output but may appear
+in vendor-generated or hand-edited diffs. Preserve them verbatim — do not skip or collapse.
 
-**Binary diffs.**
-Lines matching `Binary files a/<X> and b/<Y> differ` cannot be mechanically
-reversed. Detect this pattern and fail with `ncr-rollback-binary-unsupported` (exit
-non-zero) — do not emit a fake mechanical rollback.
+**Binary diffs.** Lines matching `Binary files a/<X> and b/<Y> differ` cannot be mechanically
+reversed. Detect this pattern and fail with `ncr-rollback-binary-unsupported` (exit non-zero) — do
+not emit a fake mechanical rollback.
 
 ---
 
 ## 4. Structured-YAML Reversal
 
-Change-input authors who supply structured YAML **must** include an explicit
-`reverse:` block alongside every `forward:` block. When `reverse:` is present,
-`derive-rollback.sh` emits it verbatim as the rollback plan body — no inference
-required.
+Change-input authors who supply structured YAML **must** include an explicit `reverse:` block
+alongside every `forward:` block. When `reverse:` is present, `derive-rollback.sh` emits it verbatim
+as the rollback plan body — no inference required.
 
 ```yaml
 forward:
@@ -133,7 +120,7 @@ reverse:
 
 When `reverse:` is **absent**, the script errors immediately:
 
-```
+```text
 error: ncr-rollback-missing-reverse
 input: <path>
 message: structured-yaml change file has a 'forward' block but no 'reverse' block.
@@ -146,11 +133,11 @@ Exit code 1. Do NOT attempt to infer the reverse from the `forward:` block.
 
 ## 5. Ambiguous / Playbook Handling
 
-When the input is detected as **`playbook`**, emit this stub to stdout and exit 0
-(the artifact is valid but low-confidence; the warning is surfaced via the
-`confidence: low` marker and stderr `ncr-rollback-ambiguous`, not via a non-zero exit):
+When the input is detected as **`playbook`**, emit this stub to stdout and exit 0 (the artifact is
+valid but low-confidence; the warning is surfaced via the `confidence: low` marker and stderr
+`ncr-rollback-ambiguous`, not via a non-zero exit):
 
-```
+```text
 # ROLLBACK PLAN — MANUAL DERIVATION REQUIRED
 
 No mechanical inverse is available for this change shape. The operator must
@@ -163,12 +150,11 @@ Input: <path>
 
 When the input is detected as **`unknown`**, do **not** emit this stub with exit 0.
 `derive-rollback.sh` MUST exit non-zero with `ncr-diff-unsupported-shape` (see §2 and
-`error-messages.md`) — the same fatal contract as `parse-change.sh` for unsupported
-shapes.
+`error-messages.md`) — the same fatal contract as `parse-change.sh` for unsupported shapes.
 
-The literal string `MANUAL DERIVATION REQUIRED` must appear verbatim for **playbook**
-stubs so that downstream tooling (e.g., `render-artifact.sh`) can grep for it as a
-sentinel. Do **not** fabricate steps. Do **not** guess at device state.
+The literal string `MANUAL DERIVATION REQUIRED` must appear verbatim for **playbook** stubs so that
+downstream tooling (e.g., `render-artifact.sh`) can grep for it as a sentinel. Do **not** fabricate
+steps. Do **not** guess at device state.
 
 ---
 
@@ -180,17 +166,16 @@ sentinel. Do **not** fabricate steps. Do **not** guess at device state.
 | `medium` | Reserved for future cases where partial inference produces a likely-correct-but-unverified reverse. Not currently used.                         |
 | `low`    | Manual derivation required: `playbook` or binary diff (stub). `unknown` is **not** low-confidence — it is fatal (`ncr-diff-unsupported-shape`). |
 
-The `render-artifact.sh` renderer **must** surface `confidence: low` as a visible
-warning callout in the generated artifact (bolded block or highlighted admonition).
-This constraint is cross-referenced in `./artifact-template.md` under the
-"Rollback Confidence" section.
+The `render-artifact.sh` renderer **must** surface `confidence: low` as a visible warning callout in
+the generated artifact (bolded block or highlighted admonition). This constraint is cross-referenced
+in `./artifact-template.md` under the "Rollback Confidence" section.
 
 ---
 
 ## 7. Error IDs (Canonical Catalog — Cross-Reference Only)
 
-The canonical error catalog with full message text, exit codes, and remediation
-guidance lives in `./error-messages.md`. The IDs relevant to rollback derivation are:
+The canonical error catalog with full message text, exit codes, and remediation guidance lives in
+`./error-messages.md`. The IDs relevant to rollback derivation are:
 
 - `ncr-rollback-ambiguous` — low-confidence **playbook** stub emitted (stderr warning; exit 0)
 - `ncr-rollback-missing-reverse` — structured YAML has `forward:` but no `reverse:`
@@ -227,9 +212,9 @@ guidance lives in `./error-messages.md`. The IDs relevant to rollback derivation
  bgp_asn: 64512
 ```
 
-The `@@ -1,3 +1,3 @@` header is unchanged because the line counts are symmetric
-(1 removed, 1 added, 1 context on each side). The `-` and `+` payload lines are
-swapped; the context line (`hostname:` and `bgp_asn:`) is unchanged.
+The `@@ -1,3 +1,3 @@` header is unchanged because the line counts are symmetric (1 removed, 1 added,
+1 context on each side). The `-` and `+` payload lines are swapped; the context line (`hostname:`
+and `bgp_asn:`) is unchanged.
 
 ### Example B — Structured YAML with `reverse:`
 
@@ -258,14 +243,18 @@ reverse:
   value: 1500
 ```
 
-`confidence: high` — the `reverse:` block was explicitly declared by the
-change-input author; no inference was performed.
+`confidence: high` — the `reverse:` block was explicitly declared by the change-input author; no
+inference was performed.
 
 ---
 
 ## 9. See Also
 
-- [`./composition-contract.md`](./composition-contract.md) — how `derive-rollback.sh` fits into the `yci:network-change-review` composition pipeline
-- [`./change-input-schema.md`](./change-input-schema.md) — full schema for the change-input file, including `forward:`/`reverse:` field definitions
-- [`./error-messages.md`](./error-messages.md) — canonical error catalog with exit codes and remediation guidance
-- [`./artifact-template.md`](./artifact-template.md) — artifact rendering contract, including the `confidence: low` warning callout rule
+- [`./composition-contract.md`](./composition-contract.md) — how `derive-rollback.sh` fits into the
+  `yci:network-change-review` composition pipeline
+- [`./change-input-schema.md`](./change-input-schema.md) — full schema for the change-input file,
+  including `forward:`/`reverse:` field definitions
+- [`./error-messages.md`](./error-messages.md) — canonical error catalog with exit codes and
+  remediation guidance
+- [`./artifact-template.md`](./artifact-template.md) — artifact rendering contract, including the
+  `confidence: low` warning callout rule

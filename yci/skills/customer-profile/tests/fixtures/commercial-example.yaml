@@ -7,8 +7,8 @@ customer:
   display_name: WidgetCo Example Industries
   code: WCE
   branding:
-    color: '#2E7D32'
-    logo_path: '~/customers/widgetco-example/logo.png'
+    color: "#2E7D32"
+    logo_path: "~/customers/widgetco-example/logo.png"
 
 engagement:
   id: eng-widgetco-example-2026-q2
@@ -17,8 +17,8 @@ engagement:
   scope_tags:
     - gateway-hardening
     - observability
-  start_date: '2026-04-01'
-  end_date: '2026-09-30'
+  start_date: "2026-04-01"
+  end_date: "2026-09-30"
 
 compliance:
   regime: commercial
@@ -26,7 +26,7 @@ compliance:
 
 change_window:
   adapter: json-schedule
-  source: '~/.config/yci/change-windows/widgetco-example.json'
+  source: "~/.config/yci/change-windows/widgetco-example.json"
   timezone: America/Los_Angeles
 
 inventory:
@@ -46,17 +46,17 @@ vaults:
 deliverable:
   format:
     - markdown
-  header_template: 'Deliverable for WidgetCo Example Industries — {engagement.id}'
+  header_template: "Deliverable for WidgetCo Example Industries — {engagement.id}"
   handoff_format: git-repo
   path: /mnt/deliverables/widgetco-example
 
 vendor_tooling:
   - vendor: hashicorp
     product: terraform
-    version: '1.7'
+    version: "1.7"
   - vendor: grafana
     product: alloy
-    version: '1.2'
+    version: "1.2"
 
 safety:
   default_posture: review

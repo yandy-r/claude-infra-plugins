@@ -90,7 +90,11 @@ def main() -> int:
                     errors.append(f"{name} must be date-time")
             if "enum" in spec and bundle[name] not in spec["enum"]:
                 errors.append(f"{name} must be one of {spec['enum']}")
-            if spec.get("minItems") and isinstance(bundle[name], list) and len(bundle[name]) < spec["minItems"]:
+            if (
+                spec.get("minItems")
+                and isinstance(bundle[name], list)
+                and len(bundle[name]) < spec["minItems"]
+            ):
                 errors.append(f"{name} must contain at least {spec['minItems']} item(s)")
 
         if schema.get("additionalProperties") is False:

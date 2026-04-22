@@ -6,15 +6,13 @@
 
 ## Intent
 
-This adapter implements PCI-DSS-shaped evidence bundles for engagements that
-touch cardholder data environments. It adds PAN redaction, CDE boundary
-attestation fields, and explicit payment-scope handoff checks on top of the
-baseline evidence bundle contract.
+This adapter implements PCI-DSS-shaped evidence bundles for engagements that touch cardholder data
+environments. It adds PAN redaction, CDE boundary attestation fields, and explicit payment-scope
+handoff checks on top of the baseline evidence bundle contract.
 
 ## Evidence schema
 
-File: `evidence-schema.json`
-Schema version: `1`
+File: `evidence-schema.json` Schema version: `1`
 
 Required adapter-specific fields:
 
@@ -44,5 +42,5 @@ Pattern classes applied:
 
 File: `handoff-checklist.md`
 
-The reviewer confirms PAN redaction, CDE boundary accuracy, and signature
-metadata before the bundle leaves the engagement.
+The reviewer confirms PAN redaction, CDE boundary accuracy, and signature metadata before the bundle
+leaves the engagement.

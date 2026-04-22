@@ -1,15 +1,14 @@
 # File Inventory Adapter — Layout
 
-The `file` inventory adapter is the minimum-viable adapter for `yci:blast-radius`.
-It reads a structured tree of YAML files from a path on disk and emits the
-normalized JSON the reasoner consumes.
+The `file` inventory adapter is the minimum-viable adapter for `yci:blast-radius`. It reads a
+structured tree of YAML files from a path on disk and emits the normalized JSON the reasoner
+consumes.
 
-> **PRD binding**: §4 (no assumption of a specific inventory / CMDB system) and
-> §5.2 (profile `inventory.adapter: file` + optional `inventory.path`).
+> **PRD binding**: §4 (no assumption of a specific inventory / CMDB system) and §5.2 (profile
+> `inventory.adapter: file` + optional `inventory.path`).
 
-This file is the contract for that directory tree. It is also the reference
-that future adapters (`netbox`, `nautobot`, `servicenow-cmdb`, …) translate
-their native shapes to.
+This file is the contract for that directory tree. It is also the reference that future adapters
+(`netbox`, `nautobot`, `servicenow-cmdb`, …) translate their native shapes to.
 
 ## Path resolution
 
@@ -23,13 +22,12 @@ The inventory root path is resolved in this order (first non-empty wins):
 `<customer>` comes from
 [`yci/skills/customer-profile/scripts/resolve-customer.sh`](../../customer-profile/scripts/resolve-customer.sh).
 
-The adapter refuses to read any path outside the resolved root. Paths that
-traverse via `..` or symlinks pointing outside the root are rejected with
-`adapter-path-escape` (exit 1).
+The adapter refuses to read any path outside the resolved root. Paths that traverse via `..` or
+symlinks pointing outside the root are rejected with `adapter-path-escape` (exit 1).
 
 ## Directory tree
 
-```
+```text
 <inventory-path>/
 ├── tenants/
 │   ├── retail-ops.yaml
@@ -48,14 +46,12 @@ traverse via `..` or symlinks pointing outside the root are rejected with
     └── dc2.yaml
 ```
 
-All filenames under `tenants/`, `services/`, `devices/`, `sites/` MUST match
-`<id>.yaml` where `<id>` matches `[a-z0-9][a-z0-9-]*`. Nested subdirectories
-under these kind-directories are ignored (operators often keep archived
-records in `archive/`; the adapter does not scan into subfolders).
+All filenames under `tenants/`, `services/`, `devices/`, `sites/` MUST match `<id>.yaml` where
+`<id>` matches `[a-z0-9][a-z0-9-]*`. Nested subdirectories under these kind-directories are ignored
+(operators often keep archived records in `archive/`; the adapter does not scan into subfolders).
 
-Unknown top-level directories are ignored with a stderr warning. This lets
-operators keep human-only files (`README.md`, `notes/`, `diagrams/`) in the
-same tree.
+Unknown top-level directories are ignored with a stderr warning. This lets operators keep human-only
+files (`README.md`, `notes/`, `diagrams/`) in the same tree.
 
 ## Record schemas
 
@@ -65,7 +61,7 @@ same tree.
 id: retail-ops # MUST match filename basename
 display_name: Retail Ops
 # Optional:
-description: 'Team that owns order flow.'
+description: "Team that owns order flow."
 contacts:
   - ops@example.internal
 ```
@@ -146,22 +142,20 @@ edges:
 | `to`   | string      |   yes    | Target id.                                                                  |
 | `type` | string enum |   yes    | `depends-on`, `routes-via`, `auth-via`, `stores-in`, `hosts`, `peers-with`. |
 
-Edges whose endpoints do not resolve to a known record are surfaced as
-`orphan-edge` coverage gaps; they are still included in the graph so the
-narrative can show them, but they count as structural gaps and downgrade
-confidence to `low`.
+Edges whose endpoints do not resolve to a known record are surfaced as `orphan-edge` coverage gaps;
+they are still included in the graph so the narrative can show them, but they count as structural
+gaps and downgrade confidence to `low`.
 
 ### `sites/<id>.yaml` (optional)
 
 ```yaml
 id: dc1
-display_name: 'Primary Data Centre (DC1)'
-address: '...'
+display_name: "Primary Data Centre (DC1)"
+address: "..."
 ```
 
-Sites are narrative-only metadata. The reasoner never uses a site's
-attributes for impact propagation — it only uses the `site` field on devices
-to group output.
+Sites are narrative-only metadata. The reasoner never uses a site's attributes for impact
+propagation — it only uses the `site` field on devices to group output.
 
 ## Normalization output
 
@@ -189,9 +183,9 @@ The adapter emits a single JSON object on stdout:
 }
 ```
 
-`root` is the resolved absolute path (for fingerprinting / error messages
-only). `devices[].services_hosted` is rewritten as `hosts` edges appended to
-`dependencies[]` so the reasoner consumes a single edge list.
+`root` is the resolved absolute path (for fingerprinting / error messages only).
+`devices[].services_hosted` is rewritten as `hosts` edges appended to `dependencies[]` so the
+reasoner consumes a single edge list.
 
 ## Exit codes
 
@@ -202,13 +196,12 @@ only). `devices[].services_hosted` is rewritten as `hosts` edges appended to
 | 2    | YAML parse error or schema violation.             |
 | 3    | Runtime error — pyyaml missing.                   |
 
-All stderr output matches a catalogued error id from
-[`error-messages.md`](./error-messages.md).
+All stderr output matches a catalogued error id from [`error-messages.md`](./error-messages.md).
 
 ## Testing
 
-The canonical test fixture lives at
-`yci/skills/blast-radius/tests/fixtures/inventory-widgetcorp/` and covers:
+The canonical test fixture lives at `yci/skills/blast-radius/tests/fixtures/inventory-widgetcorp/`
+and covers:
 
 - all four kind-directories populated,
 - a dependency chain 3 hops deep,

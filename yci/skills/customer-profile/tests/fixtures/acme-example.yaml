@@ -7,8 +7,8 @@ customer:
   display_name: ACME Corporation
   code: ACM
   branding:
-    color: '#0055AA'
-    logo_path: '~/customers/acme/logo.png'
+    color: "#0055AA"
+    logo_path: "~/customers/acme/logo.png"
 
 engagement:
   id: eng-acme-2026-q1
@@ -17,8 +17,8 @@ engagement:
   scope_tags:
     - network-automation
     - compliance-audit
-  start_date: '2026-01-15'
-  end_date: '2026-06-30'
+  start_date: "2026-01-15"
+  end_date: "2026-06-30"
 
 compliance:
   regime: hipaa
@@ -32,7 +32,7 @@ compliance:
 
 change_window:
   adapter: json-schedule
-  source: '~/.config/yci/change-windows/acme.json'
+  source: "~/.config/yci/change-windows/acme.json"
   timezone: America/New_York
 
 inventory:
@@ -52,17 +52,17 @@ vaults:
 deliverable:
   format:
     - markdown
-  header_template: 'Deliverable for ACME Corporation — {engagement.id}'
+  header_template: "Deliverable for ACME Corporation — {engagement.id}"
   handoff_format: git-repo
   path: /mnt/deliverables/acme
 
 vendor_tooling:
   - vendor: hashicorp
     product: terraform
-    version: '1.7'
+    version: "1.7"
   - vendor: redhat
     product: ansible
-    version: '2.16'
+    version: "2.16"
 
 safety:
   default_posture: review

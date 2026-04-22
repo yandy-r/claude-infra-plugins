@@ -1,13 +1,13 @@
 # yci Customer Profile Schema
 
-> **Source of truth**: PRD §5.2. This document mirrors that section verbatim and
-> is the canonical reference for `load-profile.sh`, `init-profile.sh`, unit tests,
-> and humans authoring profiles by hand.
+> **Source of truth**: PRD §5.2. This document mirrors that section verbatim and is the canonical
+> reference for `load-profile.sh`, `init-profile.sh`, unit tests, and humans authoring profiles by
+> hand.
 
-A **customer profile** is a YAML document that describes one customer engagement.
-It lives at `<data-root>/profiles/<customer-id>.yaml`, where `<data-root>` resolves
-via the precedence chain: `--data-root <path>` > `$YCI_DATA_ROOT` > `~/.config/yci/`
-(see PRD §5.1). Start a new profile from `_template.yaml` in the same directory.
+A **customer profile** is a YAML document that describes one customer engagement. It lives at
+`<data-root>/profiles/<customer-id>.yaml`, where `<data-root>` resolves via the precedence chain:
+`--data-root <path>` > `$YCI_DATA_ROOT` > `~/.config/yci/` (see PRD §5.1). Start a new profile from
+`_template.yaml` in the same directory.
 
 ---
 
@@ -73,8 +73,8 @@ via the precedence chain: `--data-root <path>` > `$YCI_DATA_ROOT` > `~/.config/y
 
 #### `compliance.signing`
 
-Optional. When present, `yci:evidence-bundle` uses this subtree to select the
-signing backend for the final evidence pack.
+Optional. When present, `yci:evidence-bundle` uses this subtree to select the signing backend for
+the final evidence pack.
 
 | Field      | Type   | Required | Allowed values                  | Notes                                                                  |
 | ---------- | ------ | -------- | ------------------------------- | ---------------------------------------------------------------------- |
@@ -87,8 +87,8 @@ signing backend for the final evidence pack.
 
 ### `change_window`
 
-Required when `safety.change_window_required: true`. If omitted and that flag is
-`true`, the loader emits an error.
+Required when `safety.change_window_required: true`. If omitted and that flag is `true`, the loader
+emits an error.
 
 | Field      | Type   | Required | Allowed values                                                   | Notes                                                  |
 | ---------- | ------ | -------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
@@ -107,11 +107,10 @@ Required when `safety.change_window_required: true`. If omitted and that flag is
 | `credential_ref` | string | cond.    | `<customer-id>/<key-name>`                                            | Reference into the vaults subtree; no raw secrets |
 | `path`           | string | no       | any path                                                              | Override for inventory storage location           |
 
-> **Adapter note** — `inventory.adapter` is validated as a non-empty string, not
-> a closed enum. The values above are illustrative common adapters; new
-> adapters can be added to a profile without a schema change, provided the
-> consuming hook knows how to read them. `profile-schema.sh` reflects this
-> (no `YCI_INVENTORY_ADAPTERS` enum array is declared).
+> **Adapter note** — `inventory.adapter` is validated as a non-empty string, not a closed enum. The
+> values above are illustrative common adapters; new adapters can be added to a profile without a
+> schema change, provided the consuming hook knows how to read them. `profile-schema.sh` reflects
+> this (no `YCI_INVENTORY_ADAPTERS` enum array is declared).
 
 ---
 
@@ -123,8 +122,8 @@ Required when `safety.change_window_required: true`. If omitted and that flag is
 | `endpoint`       | string | cond.    | URL                                                                          | Required for API-backed adapters                   |
 | `credential_ref` | string | cond.    | `<customer-id>/<key-name>`                                                   | Reference into the vaults subtree; no raw secrets  |
 
-> **Adapter note** — like `inventory.adapter`, `approval.adapter` is validated
-> as a non-empty string, not a closed enum. The list above is illustrative.
+> **Adapter note** — like `inventory.adapter`, `approval.adapter` is validated as a non-empty
+> string, not a closed enum. The list above is illustrative.
 
 ---
 
@@ -147,9 +146,8 @@ Optional top-level override. Defaults to `$YCI_DATA_ROOT/vaults/<customer-id>/`.
 | `handoff_format`  | string       | yes      | `git-repo`, `zip`, `confluence`, `pdf-bundle` | Delivery packaging for end-of-engagement handoff             |
 | `path`            | string       | no       | any path                                      | Override for artifact storage; defaults to data-root subtree |
 
-Common `path` patterns: `~/Dropbox-<Customer>/deliverables/`,
-`~/OneDrive-<Customer>/deliverables/`, `/Volumes/<NAS>/deliverables/`,
-`~/Encrypted-Customers/<id>/` (see PRD §11.10).
+Common `path` patterns: `~/Dropbox-<Customer>/deliverables/`, `~/OneDrive-<Customer>/deliverables/`,
+`/Volumes/<NAS>/deliverables/`, `~/Encrypted-Customers/<id>/` (see PRD §11.10).
 
 ---
 
@@ -204,8 +202,7 @@ Values for `safety.default_posture` (PRD §11.7):
 | `review`  | Surface changes for human review before applying                       |
 | `apply`   | Allow changes to proceed (requires explicit `--apply` flag at runtime) |
 
-Default for all profiles is `dry-run`. The stock `_internal` profile uses `review`
-(PRD §0 Q5).
+Default for all profiles is `dry-run`. The stock `_internal` profile uses `review` (PRD §0 Q5).
 
 ---
 
@@ -236,18 +233,16 @@ Values for `safety.scope_enforcement` (PRD §5.2, §6.1 P0.9):
 
 ## Unknown-keys policy
 
-The profile loader emits a **warning** on any unrecognised top-level key and
-continues loading. This allows forward-compatible profiles (e.g., a profile
-authored for a future `yci` version with a new optional key will still load on
-an older version). Missing **required** keys cause an immediate **error** and
-abort loading.
+The profile loader emits a **warning** on any unrecognised top-level key and continues loading. This
+allows forward-compatible profiles (e.g., a profile authored for a future `yci` version with a new
+optional key will still load on an older version). Missing **required** keys cause an immediate
+**error** and abort loading.
 
 ---
 
 ## Credentials note
 
-Profiles **MUST NOT contain secrets**, credentials, tokens, passwords, or any
-sensitive value. Use `credential_ref` fields as opaque pointers into the active
-vaults subtree (e.g., `acme-healthcare/netbox-token`). The vault itself is
-encrypted at rest (`age` or `sops` recommended) and lives outside any git
-repository. See PRD §11.9.
+Profiles **MUST NOT contain secrets**, credentials, tokens, passwords, or any sensitive value. Use
+`credential_ref` fields as opaque pointers into the active vaults subtree (e.g.,
+`acme-healthcare/netbox-token`). The vault itself is encrypted at rest (`age` or `sops` recommended)
+and lives outside any git repository. See PRD §11.9.

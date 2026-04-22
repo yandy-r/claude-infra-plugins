@@ -29,18 +29,15 @@ operator_identity: { { operator_identity } }
 
 ## Approvals
 
-{{#each approvals}}- {{this}}
-{{/each}}
+{{#each approvals}}- {{this}} {{/each}}
 
 ## Pre-Check Artifacts
 
-{{#each pre_check_artifacts}}- {{this}}
-{{/each}}
+{{#each pre_check_artifacts}}- {{this}} {{/each}}
 
 ## Post-Check Artifacts
 
-{{#each post_check_artifacts}}- {{this}}
-{{/each}}
+{{#each post_check_artifacts}}- {{this}} {{/each}}
 
 ## Rollback Plan
 

@@ -1,13 +1,13 @@
 customer:
   id: bigbank
-  display_name: 'Big Bank'
+  display_name: "Big Bank"
 engagement:
   id: bigbank-eng
   type: implementation
   sow_ref: SOW-0002
   scope_tags: [test]
-  start_date: '2026-01-01'
-  end_date: '2026-12-31'
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
 compliance:
   regime: commercial
   evidence_schema_version: 1

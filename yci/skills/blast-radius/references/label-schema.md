@@ -1,15 +1,15 @@
 # Blast-Radius Label Schema
 
-The `yci:blast-radius` skill emits a **typed JSON blast-radius label** that
-downstream skills consume verbatim. The schema is a stable contract; changes to
-required fields require a coordinated version bump across every consumer.
+The `yci:blast-radius` skill emits a **typed JSON blast-radius label** that downstream skills
+consume verbatim. The schema is a stable contract; changes to required fields require a coordinated
+version bump across every consumer.
 
 This document is the human-readable spec. The machine-readable copy lives at
 [`label-schema.json`](./label-schema.json) (JSON Schema, Draft 2020-12).
 
-> **PRD binding**: §6.1 P0.7 (`yci:blast-radius`). Downstream consumers:
-> P0.4 (`yci:evidence-bundle`), P0.5 (`yci:network-change-review`),
-> P0.6 (`yci:mop`), P0.8 (`yci/hooks/change-window-gate`).
+> **PRD binding**: §6.1 P0.7 (`yci:blast-radius`). Downstream consumers: P0.4
+> (`yci:evidence-bundle`), P0.5 (`yci:network-change-review`), P0.6 (`yci:mop`), P0.8
+> (`yci/hooks/change-window-gate`).
 
 ## Shape
 
@@ -86,8 +86,8 @@ Each entry in `direct_devices`:
 
 ### Dependencies
 
-Each entry is an **edge** in the impact graph showing why a service or consumer
-made it into the label.
+Each entry is an **edge** in the impact graph showing why a service or consumer made it into the
+label.
 
 | Field  | Type        | Required | Meaning                                                                     |
 | ------ | ----------- | :------: | --------------------------------------------------------------------------- |
@@ -95,8 +95,8 @@ made it into the label.
 | `to`   | string      |   yes    | Target id.                                                                  |
 | `type` | string enum |   yes    | `depends-on`, `routes-via`, `auth-via`, `stores-in`, `hosts`, `peers-with`. |
 
-Edges are deduplicated but order-preserving: the order encodes BFS discovery,
-which is useful for narrative rendering.
+Edges are deduplicated but order-preserving: the order encodes BFS discovery, which is useful for
+narrative rendering.
 
 ### Downstream consumers
 
@@ -108,8 +108,8 @@ Each entry:
 | `kind`     | string enum |   yes    | `service` or `tenant`.                      |
 | `distance` | integer ≥ 1 |   yes    | BFS distance from the change (1 = one hop). |
 
-`direct_devices` is intentionally _not_ an entry in `downstream_consumers`;
-distance-0 items are already represented in `direct_devices` and `services`.
+`direct_devices` is intentionally _not_ an entry in `downstream_consumers`; distance-0 items are
+already represented in `direct_devices` and `services`.
 
 ### Coverage gaps
 
@@ -122,8 +122,7 @@ Each entry records a place the reasoner had to guess or bail:
 
 ## RTO bands
 
-Canonical ordered set, _coarser bands are safer defaults_ when a precise value
-is missing:
+Canonical ordered set, _coarser bands are safer defaults_ when a precise value is missing:
 
 | Band      | Meaning                                             |
 | --------- | --------------------------------------------------- |
@@ -140,23 +139,22 @@ The top-level `rto_band` is computed by this deterministic rule:
 1. Collect the `rto_band` of every entry in `services` (direct or downstream).
 2. Discard any `unknown`. (They are surfaced as `coverage_gaps`, not absorbed.)
 3. If the set is empty → `rto_band = "unknown"`.
-4. Otherwise → `rto_band = strictest` where strictest is the band with the
-   shortest recovery window (`lt-5m` < `5m-1h` < `1h-4h` < `gt-4h`).
+4. Otherwise → `rto_band = strictest` where strictest is the band with the shortest recovery window
+   (`lt-5m` < `5m-1h` < `1h-4h` < `gt-4h`).
 
-This is a **worst-case rollup**, not an average. Consumers (MOP, CAB) must see
-the most aggressive RTO the change could breach.
+This is a **worst-case rollup**, not an average. Consumers (MOP, CAB) must see the most aggressive
+RTO the change could breach.
 
 ### Per-service RTO-downgrade rule
 
-When an individual service's `rto_band` is absent from the inventory, the
-reasoner applies:
+When an individual service's `rto_band` is absent from the inventory, the reasoner applies:
 
-- If the service is _only_ reached via a single-homed dependency whose target
-  has a known `rto_band` → inherit that band.
+- If the service is _only_ reached via a single-homed dependency whose target has a known `rto_band`
+  → inherit that band.
 - Otherwise → `rto_band = "unknown"` and emit a `missing-rto` coverage gap.
 
-Never fabricate bands heuristically (e.g., "tier-1 ⇒ lt-5m"). Inventory is
-authoritative; absence of data is reported, not guessed.
+Never fabricate bands heuristically (e.g., "tier-1 ⇒ lt-5m"). Inventory is authoritative; absence of
+data is reported, not guessed.
 
 ## Confidence rule
 
@@ -168,14 +166,14 @@ Confidence is a direct function of coverage gaps, not a subjective estimate:
 | Only `missing-rto` or `missing-criticality` entries (no structural gaps)    | `medium`   |
 | Any `unknown-device`, `unknown-service`, `orphan-edge`, or `missing-tenant` | `low`      |
 
-Structural gaps mean the graph itself is incomplete; those downgrade to `low`
-regardless of how many data-quality gaps exist.
+Structural gaps mean the graph itself is incomplete; those downgrade to `low` regardless of how many
+data-quality gaps exist.
 
 ## Inventory source fingerprint
 
 `inventory_source_fingerprint` is `sha256:<hex>` of:
 
-```
+```text
 SHA-256(
   JSON.stringify(
     { tenants, services, devices, dependencies, sites },
@@ -184,15 +182,14 @@ SHA-256(
 )
 ```
 
-computed over the adapter's normalized output (the same JSON that was piped
-into the reasoner on stdin). This lets downstream consumers prove their label
-was produced against the exact inventory snapshot the operator was looking at.
+computed over the adapter's normalized output (the same JSON that was piped into the reasoner on
+stdin). This lets downstream consumers prove their label was produced against the exact inventory
+snapshot the operator was looking at.
 
 ## Schema version policy
 
 - **v1** (current): fields above are required.
-- Additive changes (new optional fields) do **not** bump `schema_version`;
-  consumers must tolerate unknown top-level keys.
-- Removing, renaming, or retyping any required field **does** bump
-  `schema_version`. Consumer skills pin a `schema_version` they accept and
-  refuse labels with a different value.
+- Additive changes (new optional fields) do **not** bump `schema_version`; consumers must tolerate
+  unknown top-level keys.
+- Removing, renaming, or retyping any required field **does** bump `schema_version`. Consumer skills
+  pin a `schema_version` they accept and refuse labels with a different value.

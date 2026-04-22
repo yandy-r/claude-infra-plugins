@@ -1,13 +1,13 @@
 customer:
   id: acme
-  display_name: 'Acme Corp'
+  display_name: "Acme Corp"
 engagement:
   id: acme-eng
   type: implementation
   sow_ref: SOW-0001
   scope_tags: [test]
-  start_date: '2026-01-01'
-  end_date: '2026-12-31'
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
 compliance:
   regime: commercial
   evidence_schema_version: 1

@@ -12,8 +12,8 @@ engagement:
   sow_ref: SOW-MIN-01
   scope_tags:
     - audit
-  start_date: '2026-03-01'
-  end_date: '2026-03-31'
+  start_date: "2026-03-01"
+  end_date: "2026-03-31"
 
 compliance:
   regime: none
@@ -28,10 +28,10 @@ approval:
 deliverable:
   format:
     - markdown
-  header_template: 'Minimal deliverable'
+  header_template: "Minimal deliverable"
   handoff_format: zip
 
 safety:
   default_posture: review
   change_window_required: false
-  scope_enforcement: 'off'
+  scope_enforcement: "off"

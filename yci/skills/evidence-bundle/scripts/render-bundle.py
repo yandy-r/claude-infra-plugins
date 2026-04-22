@@ -44,7 +44,9 @@ def render_template(template: str, bundle: dict) -> str:
         return "".join(rendered)
 
     rendered = re.sub(r"{{#each\s+([^}]+)}}(.*?){{/each}}", each_repl, template, flags=re.DOTALL)
-    rendered = re.sub(r"{{\s*([^{}]+?)\s*}}", lambda m: str(_lookup(bundle, m.group(1).strip())), rendered)
+    rendered = re.sub(
+        r"{{\s*([^{}]+?)\s*}}", lambda m: str(_lookup(bundle, m.group(1).strip())), rendered
+    )
     return rendered
 
 

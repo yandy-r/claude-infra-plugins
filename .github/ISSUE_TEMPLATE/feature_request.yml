@@ -1,7 +1,7 @@
 name: Feature request
-description: 'Propose a new feature for claude-plugins'
-title: '[Feature]: '
-labels: ['type:feature', 'status:needs-triage']
+description: "Propose a new feature for claude-plugins"
+title: "[Feature]: "
+labels: ["type:feature", "status:needs-triage"]
 body:
   - type: markdown
     attributes:
@@ -13,7 +13,8 @@ body:
     id: category
     attributes:
       label: Feature Category
-      description: 'What area does this feature relate to? Customize these options for your project.'
+      description:
+        "What area does this feature relate to? Customize these options for your project."
       options:
         - Core Functionality
         - Developer Experience
@@ -29,7 +30,7 @@ body:
     id: problem
     attributes:
       label: Problem / Use Case
-      description: 'What problem does this solve, or what use case does it enable?'
+      description: "What problem does this solve, or what use case does it enable?"
     validations:
       required: true
 
@@ -53,7 +54,7 @@ body:
     id: duplicate-check
     attributes:
       label: Duplicate Check
-      description: 'Please search existing issues before filing a new one.'
+      description: "Please search existing issues before filing a new one."
       options:
-        - label: 'I have searched existing issues and this feature has not been requested.'
+        - label: "I have searched existing issues and this feature has not been requested."
           required: false

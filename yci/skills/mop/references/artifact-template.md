@@ -2,8 +2,8 @@
 
 ## Contract
 
-This template is slot-replaced by `scripts/render-artifact.sh`. Every listed slot
-must be precomputed before rendering.
+This template is slot-replaced by `scripts/render-artifact.sh`. Every listed slot must be
+precomputed before rendering.
 
 ### Slot Map
 
@@ -37,10 +37,8 @@ must be precomputed before rendering.
 
 ## Method of Procedure
 
-**Change ID:** `{{change_id}}`
-**Customer:** `{{customer_id}}`
-**Compliance regime:** `{{compliance_regime}}`
-**Timestamp (UTC):** `{{timestamp_utc}}`
+**Change ID:** `{{change_id}}` **Customer:** `{{customer_id}}` **Compliance regime:**
+`{{compliance_regime}}` **Timestamp (UTC):** `{{timestamp_utc}}`
 
 ---
 

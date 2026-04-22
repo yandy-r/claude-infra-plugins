@@ -12,8 +12,8 @@ tenant_scope:
   - billing
   - analytics
 timestamps:
-  generated_at: '2026-04-21T15:00:00Z'
-  executed_at: '2026-04-21T14:45:00Z'
+  generated_at: "2026-04-21T15:00:00Z"
+  executed_at: "2026-04-21T14:45:00Z"
 soc2:
   control_mappings:
     - CC6.1

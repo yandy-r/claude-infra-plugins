@@ -43,9 +43,7 @@ def _looks_like_path(token: str) -> bool:
         return True
     if _SHELL_META_RE.search(token):
         return False
-    if "/" in token and _PATH_SLASH_RE.search(token):
-        return True
-    return False
+    return "/" in token and _PATH_SLASH_RE.search(token) is not None
 
 
 def _canonicalize(candidate: str, cwd: str) -> str:
@@ -105,7 +103,9 @@ def _scan_for_path_hints(text: str, cwd: str, paths: "dict[str, None]") -> None:
         _emit(paths, match.group(1), cwd)
 
 
-def _extract_from_tool_input(tool_name: str, tool_input: dict, cwd: str, paths: "dict[str, None]") -> None:
+def _extract_from_tool_input(
+    tool_name: str, tool_input: dict, cwd: str, paths: "dict[str, None]"
+) -> None:
     """Dispatch per tool_name to extract candidate paths from tool_input."""
     if tool_name in ("Read", "Write", "Edit", "MultiEdit"):
         fp = tool_input.get("file_path")

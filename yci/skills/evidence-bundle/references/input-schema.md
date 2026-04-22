@@ -1,7 +1,7 @@
 # Evidence Bundle Manifest Schema
 
-The supplemental manifest can be YAML or JSON. It carries execution metadata
-that does not live in the upstream `network-change-review` evidence stub.
+The supplemental manifest can be YAML or JSON. It carries execution metadata that does not live in
+the upstream `network-change-review` evidence stub.
 
 ## Required fields
 
@@ -21,8 +21,7 @@ that does not live in the upstream `network-change-review` evidence stub.
 
 - `pci.cde_boundary_attestation` — string
 - `soc2.control_mappings` — array of CC-series control identifiers
-- `hipaa.baa_reference_override` — string; only used if the profile omits
-  `compliance.baa_reference`
+- `hipaa.baa_reference_override` — string; only used if the profile omits `compliance.baa_reference`
 
 ## Example
 

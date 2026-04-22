@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document is the canonical catalog of every `ncr-*` error ID that
-`yci:network-change-review` emits. Every script in the skill tree (parse-change.sh,
-derive-rollback.sh, render-artifact.sh, etc.) MUST use only IDs defined here. IDs
-are stable — renaming or removing an ID is a breaking change. Callers should key on
-exit code + stderr ID prefix (`[ncr-<id>]`), not on message text, which may evolve.
+This document is the canonical catalog of every `ncr-*` error ID that `yci:network-change-review`
+emits. Every script in the skill tree (parse-change.sh, derive-rollback.sh, render-artifact.sh,
+etc.) MUST use only IDs defined here. IDs are stable — renaming or removing an ID is a breaking
+change. Callers should key on exit code + stderr ID prefix (`[ncr-<id>]`), not on message text,
+which may evolve.
 
 ---
 
@@ -34,85 +34,79 @@ exit code + stderr ID prefix (`[ncr-<id>]`), not on message text, which may evol
 
 ### Exit code grouping
 
-Exit codes are grouped by failure domain to allow callers to triage without
-inspecting message text.
+Exit codes are grouped by failure domain to allow callers to triage without inspecting message text.
 
-**Group 2 — setup / configuration** (`ncr-customer-unresolved`,
-`ncr-profile-load-failed`, `ncr-adapter-unresolvable`): the skill cannot start
-useful work until the configuration problem is resolved. No partial artifact is
-written. These errors should always be surfaced directly to the operator.
+**Group 2 — setup / configuration** (`ncr-customer-unresolved`, `ncr-profile-load-failed`,
+`ncr-adapter-unresolvable`): the skill cannot start useful work until the configuration problem is
+resolved. No partial artifact is written. These errors should always be surfaced directly to the
+operator.
 
 **Group 3 — input shape** (`ncr-diff-unsupported-shape`, `ncr-targets-unresolvable`,
-`ncr-rollback-missing-reverse`, `ncr-rollback-binary-unsupported`): the change file
-provided via `--change` does not meet the skill's input contract. No artifact is
-written. The operator must correct the change file and re-invoke. Group 3 errors are
-not retried silently — the root cause is in the input, not in a transient condition.
+`ncr-rollback-missing-reverse`, `ncr-rollback-binary-unsupported`): the change file provided via
+`--change` does not meet the skill's input contract. No artifact is written. The operator must
+correct the change file and re-invoke. Group 3 errors are not retried silently — the root cause is
+in the input, not in a transient condition.
 
-**Exit 4 — sanitizer hard-stop** (`ncr-sanitizer-input-rejected`): the diff contains
-content that the active compliance adapter's redaction rules forbid in output
-artifacts (e.g., private keys, RFC1918 addresses, internal hostnames). The diff must
-be reviewed and corrected before re-running. This exit is distinct from group 3
-because the file shape is valid but the content violates a policy boundary.
+**Exit 4 — sanitizer hard-stop** (`ncr-sanitizer-input-rejected`): the diff contains content that
+the active compliance adapter's redaction rules forbid in output artifacts (e.g., private keys,
+RFC1918 addresses, internal hostnames). The diff must be reviewed and corrected before re-running.
+This exit is distinct from group 3 because the file shape is valid but the content violates a policy
+boundary.
 
-**Exit 5 — composed skill failure** (`ncr-blast-radius-failed`): `yci:blast-radius`
-exited non-zero. The blast-radius skill has its own diagnostics; callers should
-inspect its stderr output before re-running. No NCR artifact is written until blast
-radius succeeds.
+**Exit 5 — composed skill failure** (`ncr-blast-radius-failed`): `yci:blast-radius` exited non-zero.
+The blast-radius skill has its own diagnostics; callers should inspect its stderr output before
+re-running. No NCR artifact is written until blast radius succeeds.
 
 **Group 6 — rendering environment** (`ncr-branding-template-missing`,
-`ncr-adapter-template-missing`): files that should exist in the plugin installation
-or in the customer profile are absent. These typically indicate a misconfigured
-profile (`deliverable.header_template` points to a non-existent file) or a corrupt
-plugin install. The partial artifact is discarded.
+`ncr-adapter-template-missing`): files that should exist in the plugin installation or in the
+customer profile are absent. These typically indicate a misconfigured profile
+(`deliverable.header_template` points to a non-existent file) or a corrupt plugin install. The
+partial artifact is discarded.
 
-**Exit 7 — isolation / security gate** (`ncr-cross-customer-leak-detected`): either
-the **preflight** scan on the raw change input (`review.sh` step 8 /
-`preflight-cross-customer.sh`) or the **post-render** `customer-isolation/detect.sh`
-scan found identifiers from another customer engagement. The artifact is discarded
-immediately (or never produced, when preflight fails). This exit code MUST NOT be
-silently suppressed by calling scripts. Any suppression would bypass a critical
-data-isolation control.
+**Exit 7 — isolation / security gate** (`ncr-cross-customer-leak-detected`): either the
+**preflight** scan on the raw change input (`review.sh` step 8 / `preflight-cross-customer.sh`) or
+the **post-render** `customer-isolation/detect.sh` scan found identifiers from another customer
+engagement. The artifact is discarded immediately (or never produced, when preflight fails). This
+exit code MUST NOT be silently suppressed by calling scripts. Any suppression would bypass a
+critical data-isolation control.
 
 ### Exit 0 warnings
 
-`ncr-rollback-ambiguous` intentionally exits 0. Low rollback confidence is a
-warning condition, not a fatal error — the artifact is still emitted with a visible
-rollback confidence callout block so the operator can supplement the rollback plan
-before the change window opens. Treating low confidence as a hard stop would block
-legitimate playbook-shaped changes where manual rollback is the intended path.
+`ncr-rollback-ambiguous` intentionally exits 0. Low rollback confidence is a warning condition, not
+a fatal error — the artifact is still emitted with a visible rollback confidence callout block so
+the operator can supplement the rollback plan before the change window opens. Treating low
+confidence as a hard stop would block legitimate playbook-shaped changes where manual rollback is
+the intended path.
 
 ### Stderr format
 
 Every error is written to stderr in the format:
 
-```
+```text
 [ncr-<id>] <resolved message>
 ```
 
-where `<resolved message>` has the `{detail}` and `{path}` placeholders replaced
-with the actual values. The `[ncr-<id>]` prefix is stable; automated callers may
-parse it with a simple prefix match.
+where `<resolved message>` has the `{detail}` and `{path}` placeholders replaced with the actual
+values. The `[ncr-<id>]` prefix is stable; automated callers may parse it with a simple prefix
+match.
 
 ### Adding a new error ID
 
 When a new failure mode is introduced in any script under this skill:
 
-1. Choose an ID that begins `ncr-` and uses kebab-case. Prefer descriptive names
-   that identify the script and the failure mode (e.g., `ncr-derive-rollback-*`
-   for failures in `derive-rollback.sh`).
-2. Pick the exit code group that matches the failure domain (see groupings above).
-   Do not reuse or alias exit codes across groups — the grouping is the stable
-   contract for automated callers.
-3. Add the new row to the catalog table above before adding the `exit` call in
-   the script. The table is the authoritative definition; the script is the
-   implementation.
-4. Cross-reference the new ID in whichever other reference docs apply
-   (`change-input-schema.md`, `artifact-template.md`, etc.).
-5. Add a test case to the skill's `tests/` directory that covers the new error path
-   (see step 6.1 acceptance test).
+1. Choose an ID that begins `ncr-` and uses kebab-case. Prefer descriptive names that identify the
+   script and the failure mode (e.g., `ncr-derive-rollback-*` for failures in `derive-rollback.sh`).
+2. Pick the exit code group that matches the failure domain (see groupings above). Do not reuse or
+   alias exit codes across groups — the grouping is the stable contract for automated callers.
+3. Add the new row to the catalog table above before adding the `exit` call in the script. The table
+   is the authoritative definition; the script is the implementation.
+4. Cross-reference the new ID in whichever other reference docs apply (`change-input-schema.md`,
+   `artifact-template.md`, etc.).
+5. Add a test case to the skill's `tests/` directory that covers the new error path (see step 6.1
+   acceptance test).
 
-Do not add error IDs to scripts without adding them to this catalog first. An
-undocumented `ncr-*` exit in a script is a defect, not a feature.
+Do not add error IDs to scripts without adding them to this catalog first. An undocumented `ncr-*`
+exit in a script is a defect, not a feature.
 
 ---
 

@@ -30,17 +30,16 @@ reverse:
 ```
 
 - `reverse:` is mandatory for rollback derivation.
-- `targets:` is optional but strongly recommended; otherwise target extraction
-  falls back to the `forward:` block.
+- `targets:` is optional but strongly recommended; otherwise target extraction falls back to the
+  `forward:` block.
 
 ## 3. Terraform plan JSON
 
 - Detect by JSON with `format_version` and `resource_changes`.
 - Intended shape: output from `terraform show -json`.
-- Apply block is rendered as a plan verification + `terraform apply tfplan`
-  workflow.
-- Rollback is derived as a pre-state snapshot restore workflow plus resource-
-  specific fast paths where the plan provides enough information.
+- Apply block is rendered as a plan verification + `terraform apply tfplan` workflow.
+- Rollback is derived as a pre-state snapshot restore workflow plus resource- specific fast paths
+  where the plan provides enough information.
 
 ## 4. Vendor CLI text
 
@@ -66,5 +65,5 @@ Supported `target:` forms:
 - `service=<id>`
 - `tenant=<id>`
 
-The command body starts at the first non-comment line. Header comments are not part
-of the rendered apply block or rollback derivation.
+The command body starts at the first non-comment line. Header comments are not part of the rendered
+apply block or rollback derivation.

@@ -38,7 +38,9 @@ _IPV6_PATTERN = (
 )
 
 CATEGORY_REGEXES = {
-    "ipv4": re.compile(r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"),
+    "ipv4": re.compile(
+        r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
+    ),
     "ipv6": re.compile(_IPV6_PATTERN),
     "hostname": re.compile(
         r"\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+\b",
@@ -160,9 +162,7 @@ def _is_valid_hostname(tok: str) -> bool:
     if not any(c.isalpha() for c in last_label):
         # Last label is all digits → looks like an IPv4 address; skip.
         return False
-    if tok.lower() in WHITELISTED_HOSTNAMES:
-        return False
-    return True
+    return tok.lower() not in WHITELISTED_HOSTNAMES
 
 
 # ---------------------------------------------------------------------------
@@ -328,7 +328,7 @@ def main() -> None:
         _scan_string(s, results)
 
     # Emit results.
-    for category, token in results.keys():
+    for category, token in results:
         print(f"{category}\t{token}")
 
 

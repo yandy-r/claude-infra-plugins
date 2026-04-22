@@ -1,6 +1,10 @@
 ---
-description: Assemble a signed evidence bundle for the active customer from an evidence stub plus supplemental execution metadata.
-argument-hint: '--evidence-stub <path> --manifest <path> [--customer <name>] [--data-root <path>] [--output-dir <path>] [--adapter <regime>]'
+description:
+  Assemble a signed evidence bundle for the active customer from an evidence stub plus supplemental
+  execution metadata.
+argument-hint:
+  "--evidence-stub <path> --manifest <path> [--customer <name>] [--data-root <path>] [--output-dir
+  <path>] [--adapter <regime>]"
 allowed-tools:
   - Read
   - Bash(${CLAUDE_PLUGIN_ROOT}/skills/evidence-bundle/scripts/*.sh:*)
@@ -12,9 +16,8 @@ allowed-tools:
 # /yci:evidence
 
 Package a compliance-shaped evidence bundle for the active customer. This wraps
-`yci:evidence-bundle`, which validates the merged payload against the active
-adapter schema, renders the adapter template, and signs the final markdown
-artifact.
+`yci:evidence-bundle`, which validates the merged payload against the active adapter schema, renders
+the adapter template, and signs the final markdown artifact.
 
 ## Instructions
 

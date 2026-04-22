@@ -2,13 +2,12 @@
 
 ## Purpose
 
-This document defines what `--change <path>` accepts as input to
-`yci:network-change-review`. The path must point to a file that `parse-change.sh`
-can read at skill invocation time. The script detects the shape of the change
-automatically, normalizes it to a canonical JSON envelope, and emits that envelope
-on stdout for downstream consumers (`derive-rollback.sh`, `build-check-catalogs.sh`,
-the blast-radius reasoner, and `render-artifact.sh`). If detection fails, the
-script exits with a structured error referencing the IDs in `./error-messages.md`.
+This document defines what `--change <path>` accepts as input to `yci:network-change-review`. The
+path must point to a file that `parse-change.sh` can read at skill invocation time. The script
+detects the shape of the change automatically, normalizes it to a canonical JSON envelope, and emits
+that envelope on stdout for downstream consumers (`derive-rollback.sh`, `build-check-catalogs.sh`,
+the blast-radius reasoner, and `render-artifact.sh`). If detection fails, the script exits with a
+structured error referencing the IDs in `./error-messages.md`.
 
 ---
 
@@ -20,16 +19,16 @@ script exits with a structured error referencing the IDs in `./error-messages.md
 | `structured-yaml` | `*.yaml`, `*.yml`                  | Top-level key `forward:` present (YAML, not comment) | Optional `reverse:` block. Missing `reverse:` triggers `ncr-rollback-missing-reverse`.  |
 | `playbook`        | `*.yaml`, `*.yml`                  | Does not match `structured-yaml` (no `forward:` key) | Ansible playbooks and similar; `targets[]` confidence is `low`.                         |
 
-Detection is ordered: unified-diff magic is tested first (extension-agnostic),
-then YAML extension with `forward:` key, then YAML extension without it. A file
-that does not match any shape exits with `ncr-diff-unsupported-shape`.
+Detection is ordered: unified-diff magic is tested first (extension-agnostic), then YAML extension
+with `forward:` key, then YAML extension without it. A file that does not match any shape exits with
+`ncr-diff-unsupported-shape`.
 
 ---
 
 ## Normalized JSON Shape
 
-`parse-change.sh` emits exactly the following JSON object on stdout. Every
-downstream script treats this envelope as its canonical input contract.
+`parse-change.sh` emits exactly the following JSON object on stdout. Every downstream script treats
+this envelope as its canonical input contract.
 
 ```json
 {
@@ -65,36 +64,33 @@ Target derivation is keyed by `diff_kind`.
 ### `unified-diff`
 
 1. Scan `+++ b/<path>` header lines in the diff.
-2. For each `<path>`, take the last two path segments (e.g., `routers/dc1-edge-01.conf`
-   → `["routers", "dc1-edge-01.conf"]`).
-3. Search the active inventory root (`$YCI_DATA_ROOT/inventories/<customer>/`) for
-   any file whose name contains either segment as a substring. Which subdirectory the
-   match lives under (`devices/`, `services/`, `tenants/`, …) determines `targets[].kind`
-   (see `KIND_MAP` in `parse-change.sh`). The parser reads only the `id` field from the
-   matched YAML record (falling back to the filename stem) — it does **not** read a
-   `type` property from the inventory file.
-4. If zero targets resolve across all `+++ b/` headers, exit with
-   `ncr-targets-unresolvable`. The operator must either add explicit `targets:` (use
-   a `structured-yaml` wrapper) or adjust the diff path naming to match inventory
-   entries.
+2. For each `<path>`, take the last two path segments (e.g., `routers/dc1-edge-01.conf` →
+   `["routers", "dc1-edge-01.conf"]`).
+3. Search the active inventory root (`$YCI_DATA_ROOT/inventories/<customer>/`) for any file whose
+   name contains either segment as a substring. Which subdirectory the match lives under
+   (`devices/`, `services/`, `tenants/`, …) determines `targets[].kind` (see `KIND_MAP` in
+   `parse-change.sh`). The parser reads only the `id` field from the matched YAML record (falling
+   back to the filename stem) — it does **not** read a `type` property from the inventory file.
+4. If zero targets resolve across all `+++ b/` headers, exit with `ncr-targets-unresolvable`. The
+   operator must either add explicit `targets:` (use a `structured-yaml` wrapper) or adjust the diff
+   path naming to match inventory entries.
 
 ### `structured-yaml`
 
-Read the `forward[].device`, `forward[].service`, and `forward[].tenant` fields from
-each step in the `forward:` block. The `targets[]` list is the union of all non-null
-values found across all steps. `kind` is taken directly from which field carried the
-value (`device` → `kind: device`, `service` → `kind: service`, etc.). Confidence is
-`high` because the operator explicitly listed targets.
+Read the `forward[].device`, `forward[].service`, and `forward[].tenant` fields from each step in
+the `forward:` block. The `targets[]` list is the union of all non-null values found across all
+steps. `kind` is taken directly from which field carried the value (`device` → `kind: device`,
+`service` → `kind: service`, etc.). Confidence is `high` because the operator explicitly listed
+targets.
 
 ### `playbook`
 
-Perform a best-effort keyword scan: extract values from `hosts:` keys at any YAML
-nesting level. Map each extracted host string to a `targets[]` entry with
-`kind: unknown`. Confidence is `low`; `render-artifact.sh` will include a warning
-callout in the emitted artifact. This path does NOT exit non-zero solely because
-confidence is low — the artifact proceeds with an explicit warning. If zero hosts are
-found, `targets[]` is empty and a `ncr-targets-unresolvable` warning is included in
-the artifact (non-fatal when `diff_kind` is `playbook`).
+Perform a best-effort keyword scan: extract values from `hosts:` keys at any YAML nesting level. Map
+each extracted host string to a `targets[]` entry with `kind: unknown`. Confidence is `low`;
+`render-artifact.sh` will include a warning callout in the emitted artifact. This path does NOT exit
+non-zero solely because confidence is low — the artifact proceeds with an explicit warning. If zero
+hosts are found, `targets[]` is empty and a `ncr-targets-unresolvable` warning is included in the
+artifact (non-fatal when `diff_kind` is `playbook`).
 
 ---
 
@@ -106,9 +102,9 @@ the artifact (non-fatal when `diff_kind` is `playbook`).
 | `ncr-targets-unresolvable`     | `unified-diff` shape: zero inventory matches across all `+++ b/` paths | `./error-messages.md` |
 | `ncr-rollback-missing-reverse` | `structured-yaml` shape: `forward:` present but `reverse:` absent      | `./error-messages.md` |
 
-All error messages are emitted to stderr. The exit codes match the table in
-`./error-messages.md` exactly — callers must not rely on the message text, only
-the exit code and ID (printed on stderr as `[ncr-<id>]` prefix).
+All error messages are emitted to stderr. The exit codes match the table in `./error-messages.md`
+exactly — callers must not rely on the message text, only the exit code and ID (printed on stderr as
+`[ncr-<id>]` prefix).
 
 ---
 

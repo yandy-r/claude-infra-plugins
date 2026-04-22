@@ -1,7 +1,14 @@
 ---
 name: mop
-description: Generate a customer-deliverable Method of Procedure artifact for the active customer from a reviewed change input. Produces dual-branded markdown with pre-change state capture, apply commands, post-change validation, rollback commands, abort criteria, and blast-radius context. Use when the user runs /yci:mop, asks for a MOP/runbook/method-of-procedure, or needs a change handoff document without auto-applying anything.
-argument-hint: '<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>] [--output-dir <path>]'
+description:
+  Generate a customer-deliverable Method of Procedure artifact for the active customer from a
+  reviewed change input. Produces dual-branded markdown with pre-change state capture, apply
+  commands, post-change validation, rollback commands, abort criteria, and blast-radius context. Use
+  when the user runs /yci:mop, asks for a MOP/runbook/method-of-procedure, or needs a change handoff
+  document without auto-applying anything.
+argument-hint:
+  "<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>]
+  [--output-dir <path>]"
 allowed-tools:
   - Read
   - Bash(${CLAUDE_PLUGIN_ROOT}/skills/mop/scripts/*.sh:*)
@@ -16,13 +23,12 @@ allowed-tools:
 
 # mop
 
-Produces a dual-branded, customer-deliverable Method of Procedure artifact for the
-active customer. The output is markdown-first and lives under the customer's
-deliverable path, never in the repository. The workflow is composition-first:
-resolve the active profile, preflight the input for cross-customer leaks, normalize
-the change into a bounded internal shape, derive rollback commands, run the
-blast-radius reasoner, build pre/post check catalogs, render the final artifact,
-sanitize it, and only then write it to disk.
+Produces a dual-branded, customer-deliverable Method of Procedure artifact for the active customer.
+The output is markdown-first and lives under the customer's deliverable path, never in the
+repository. The workflow is composition-first: resolve the active profile, preflight the input for
+cross-customer leaks, normalize the change into a bounded internal shape, derive rollback commands,
+run the blast-radius reasoner, build pre/post check catalogs, render the final artifact, sanitize
+it, and only then write it to disk.
 
 ## Supported inputs
 
@@ -40,8 +46,8 @@ Unsupported or ambiguous shapes must fail fast with the catalogued `mop-*` error
 
 ## Output
 
-On success the workflow prints exactly one line to stdout: the absolute path to the
-rendered `mop.md` artifact. Supporting files written alongside it:
+On success the workflow prints exactly one line to stdout: the absolute path to the rendered
+`mop.md` artifact. Supporting files written alongside it:
 
 - `change.json`
 - `rollback.txt`

@@ -1,7 +1,7 @@
 # GitHub Labels for claude-infra-plugins
 
-Apply these labels to keep issues and pull requests consistently categorized. Prune and
-customize for your project. `area:` labels are project-specific; add them yourself.
+Apply these labels to keep issues and pull requests consistently categorized. Prune and customize
+for your project. `area:` labels are project-specific; add them yourself.
 
 ## Label Families
 
@@ -54,5 +54,5 @@ gh label create "good first issue"  --color "7057ff" --description "Suitable for
 gh label create "help wanted"       --color "008672" --description "Extra attention needed"
 ```
 
-> **Note:** Prune and customize for your project. `area:` labels are project-specific;
-> add them yourself (e.g., `area:auth`, `area:cli`, `area:api`).
+> **Note:** Prune and customize for your project. `area:` labels are project-specific; add them
+> yourself (e.g., `area:auth`, `area:cli`, `area:api`).
