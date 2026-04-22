@@ -1,1 +1,4 @@
-{ "tool_name": "Read", "tool_input": { "file_path": "FIXTURE_DR/inventories/acme/hosts.yaml" } }
+{
+  "tool_name": "Read",
+  "tool_input": { "file_path": "FIXTURE_DR/inventories/acme/hosts.yaml" }
+}

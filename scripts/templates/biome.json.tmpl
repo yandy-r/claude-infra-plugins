@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,35 +7,37 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": [
-      "node_modules",
-      "target",
-      "build",
-      "dist",
-      "out",
-      "coverage",
-      "vendor",
-      ".venv",
-      "venv",
-      "env",
-      "__pycache__",
-      ".mypy_cache",
-      ".pytest_cache",
-      ".ruff_cache",
-      ".next",
-      ".nuxt",
-      ".cache",
-      ".terraform",
-      ".cursor-plugin",
-      ".codex-plugin",
-      ".opencode-plugin"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/target",
+      "!**/build",
+      "!**/dist",
+      "!**/out",
+      "!**/coverage",
+      "!**/vendor",
+      "!**/.venv",
+      "!**/venv",
+      "!**/env",
+      "!**/__pycache__",
+      "!**/.mypy_cache",
+      "!**/.pytest_cache",
+      "!**/.ruff_cache",
+      "!**/.next",
+      "!**/.nuxt",
+      "!**/.cache",
+      "!**/.terraform",
+      "!**/.cursor-plugin",
+      "!**/.codex-plugin",
+      "!**/.opencode-plugin"
     ]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 100
+    "lineWidth": 100,
+    "lineEnding": "lf"
   },
   "linter": {
     "enabled": true,
@@ -46,9 +48,10 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "double",
-      "trailingCommas": "all",
       "semicolons": "always",
-      "arrowParentheses": "always"
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSpacing": true
     }
   },
   "json": {
