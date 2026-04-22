@@ -68,6 +68,66 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+test_ical_missing_dtstart_is_error() {
+    local sb="$1"
+    local bad_ics="${sb}/missing-dtstart.ics"
+    cat > "$bad_ics" <<'EOF'
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTEND:20260422T130000Z
+SUMMARY:Missing start
+END:VEVENT
+END:VCALENDAR
+EOF
+    local rc=0
+    "$ICAL_CHECK" --ts "2026-04-22T12:00:00Z" --source "$bad_ics" >/dev/null 2>&1 || rc=$?
+    assert_exit 2 "$rc" "ical missing DTSTART: exit 2"
+}
+
+# ---------------------------------------------------------------------------
+test_ical_monthly_rrule_falls_back_to_single_dtstart() {
+    local sb="$1"
+    local monthly_ics="${sb}/monthly.ics"
+    cat > "$monthly_ics" <<'EOF'
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART:20260401T120000Z
+DTEND:20260401T130000Z
+RRULE:FREQ=MONTHLY;COUNT=3
+SUMMARY:Monthly fallback
+END:VEVENT
+END:VCALENDAR
+EOF
+    local out rc
+    out="$("$ICAL_CHECK" --ts "2026-04-22T12:00:00Z" --source "$monthly_ics" 2>/dev/null)"; rc=$?
+    assert_exit 0 "$rc" "ical monthly fallback: exit 0"
+    assert_decision "$out" "allowed" "ical monthly fallback: decision=allowed"
+}
+
+# ---------------------------------------------------------------------------
+test_ical_interval_rrule_falls_back_to_single_dtstart() {
+    local sb="$1"
+    local interval_ics="${sb}/interval.ics"
+    cat > "$interval_ics" <<'EOF'
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART:20260420T120000Z
+DTEND:20260420T130000Z
+RRULE:FREQ=DAILY;INTERVAL=2;COUNT=3
+SUMMARY:Interval fallback
+END:VEVENT
+END:VCALENDAR
+EOF
+    local out rc
+    out="$("$ICAL_CHECK" --ts "2026-04-21T12:30:00Z" --source "$interval_ics" 2>/dev/null)"; rc=$?
+    assert_exit 0 "$rc" "ical interval fallback: exit 0"
+    assert_decision "$out" "allowed" "ical interval fallback: decision=allowed"
+}
+
+# ---------------------------------------------------------------------------
 # Test: TZID=America/Chicago boundary
 # blocked-tzid.ics: event 09:00-17:00 Central = 14:00-22:00 UTC
 # ts 16:00 UTC = inside the Central window → blocked
@@ -104,6 +164,9 @@ with_sandbox test_ical_ts_blocked
 with_sandbox test_ical_ts_warning
 with_sandbox test_ical_ts_allowed
 with_sandbox test_ical_malformed
+with_sandbox test_ical_missing_dtstart_is_error
+with_sandbox test_ical_monthly_rrule_falls_back_to_single_dtstart
+with_sandbox test_ical_interval_rrule_falls_back_to_single_dtstart
 with_sandbox test_ical_tzid_boundary
 with_sandbox test_ical_tzid_outside
 with_sandbox test_ical_missing_ts_is_usage_error

@@ -61,13 +61,13 @@ verdict with `rationale: cwg-adapter-error: <stderr>`.
   - Naive local date-time (resolved via the event's `TZID` if present, else `--timezone`, else
     `UTC`)
 - `SUMMARY` — used in the rationale string (percent-decoded; `\n`, `\,`, `\;` escapes unescaped)
-- `RRULE` with `FREQ=DAILY|WEEKLY|MONTHLY` and either `COUNT=<int>` or `UNTIL=<yyyymmddThhmmssZ>`
+- `RRULE` with `FREQ=DAILY|WEEKLY` and either `COUNT=<int>` or `UNTIL=<yyyymmddThhmmssZ>`
 
 ## Unsupported (Phase 2+ scope)
 
-- **`RRULE BYDAY / BYSETPOS / BYMONTH / BYMONTHDAY`** — adapter emits a stderr warning and treats
-  the `DTSTART` as a single occurrence. These modifiers can produce complex expansion and are
-  deferred to Phase 1+.
+- **`RRULE FREQ=MONTHLY`, `INTERVAL`, `BYDAY`, `BYSETPOS`, `BYMONTH`, `BYMONTHDAY`** — adapter emits
+  a stderr warning and treats the `DTSTART` as a single occurrence. These modifiers can produce
+  complex expansion and are deferred to Phase 1+.
 - **Inline `VTIMEZONE` definitions** — adapter resolves timezone names via `zoneinfo` (system
   tzdata). Inline `VTIMEZONE` blocks are silently skipped; the `TZID` property parameter on
   `DTSTART`/`DTEND` must be a valid IANA name for resolution to succeed.

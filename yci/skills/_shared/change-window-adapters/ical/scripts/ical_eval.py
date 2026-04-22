@@ -197,12 +197,12 @@ def _expand_rrule(
     """
     Expand RRULE into occurrence datetimes within [window_start, window_end].
 
-    Supports: FREQ=DAILY|WEEKLY|MONTHLY with COUNT or UNTIL.
-    Unsupported modifiers (BYDAY, BYSETPOS, BYMONTH, BYMONTHDAY) trigger a
+    Supports: FREQ=DAILY|WEEKLY with COUNT or UNTIL.
+    Unsupported modifiers (BYDAY, BYSETPOS, BYMONTH, BYMONTHDAY, INTERVAL) trigger a
     stderr warning; occurrence expansion falls back to DTSTART only.
     """
     freq = rrule.get("FREQ", "").upper()
-    if freq not in ("DAILY", "WEEKLY", "MONTHLY"):
+    if freq not in ("DAILY", "WEEKLY"):
         print(
             f"ical adapter: unsupported RRULE FREQ='{freq}' for event "
             f"'{event_summary}'; treating as single occurrence",
@@ -210,7 +210,7 @@ def _expand_rrule(
         )
         return [dtstart_utc] if window_start <= dtstart_utc <= window_end else []
 
-    unsupported_keys = {"BYDAY", "BYSETPOS", "BYMONTH", "BYMONTHDAY"}
+    unsupported_keys = {"BYDAY", "BYSETPOS", "BYMONTH", "BYMONTHDAY", "INTERVAL"}
     found_unsupported = unsupported_keys & set(rrule.keys())
     if found_unsupported:
         print(
@@ -220,12 +220,7 @@ def _expand_rrule(
         )
         return [dtstart_utc] if window_start <= dtstart_utc <= window_end else []
 
-    if freq == "DAILY":
-        step = timedelta(days=1)
-    elif freq == "WEEKLY":
-        step = timedelta(weeks=1)
-    else:  # MONTHLY — approximate 30-day step; acceptable within the 14-day lookahead window.
-        step = timedelta(days=30)
+    step = timedelta(days=1) if freq == "DAILY" else timedelta(weeks=1)
 
     count_str = rrule.get("COUNT", "")
     until_str = rrule.get("UNTIL", "")
@@ -309,9 +304,12 @@ def _parse_ics(source_path: str, fallback_tz_name: str) -> list[_Event]:
 
         try:
             prop_name, params, value = _parse_property_line(line)
-        except Exception:
-            # Defensive: if the line cannot be parsed at all, skip it.
-            continue
+        except Exception as exc:
+            print(
+                f"ical adapter: malformed .ics at line {line_num}: {exc}",
+                file=sys.stderr,
+            )
+            sys.exit(2)
 
         if prop_name == "BEGIN" and value.upper() == "VEVENT":
             in_vevent = True
@@ -324,14 +322,11 @@ def _parse_ics(source_path: str, fallback_tz_name: str) -> list[_Event]:
                 dtstart_raw = current.get("DTSTART_VALUE")
                 dtend_raw = current.get("DTEND_VALUE")
                 if dtstart_raw is None:
-                    # DTSTART is required for VEVENT; skip malformed event.
                     print(
-                        f"ical adapter: VEVENT near line {line_num} has no DTSTART; skipping",
+                        f"ical adapter: malformed .ics at line {line_num}: VEVENT missing DTSTART",
                         file=sys.stderr,
                     )
-                    in_vevent = False
-                    current = {}
-                    continue
+                    sys.exit(2)
 
                 dtstart_tzid = current.get("DTSTART_TZID")  # type: ignore[assignment]
                 dtend_tzid = current.get("DTEND_TZID")  # type: ignore[assignment]
@@ -379,8 +374,30 @@ def _parse_ics(source_path: str, fallback_tz_name: str) -> list[_Event]:
                         )
                         sys.exit(3)
                 else:
-                    # No DTEND: all-day events default to 24h; timed events to 0-duration.
-                    dtend_utc = dtstart_utc + timedelta(days=1) if start_is_allday else dtstart_utc
+                    # No DTEND: all-day events end at the next local midnight; timed events are 0-duration.
+                    if start_is_allday:
+                        event_tz_name = str(dtstart_tzid or fallback_tz_name)
+                        try:
+                            event_tz = ZoneInfo(event_tz_name)
+                        except ZoneInfoNotFoundError as exc:
+                            print(
+                                f"ical adapter: zoneinfo error at line {line_num}: {exc}",
+                                file=sys.stderr,
+                            )
+                            sys.exit(3)
+                        local_start = dtstart_utc.astimezone(event_tz)
+                        next_local_midnight = datetime(
+                            local_start.year,
+                            local_start.month,
+                            local_start.day,
+                            0,
+                            0,
+                            0,
+                            tzinfo=event_tz,
+                        ) + timedelta(days=1)
+                        dtend_utc = next_local_midnight.astimezone(UTC)
+                    else:
+                        dtend_utc = dtstart_utc
 
                 rrule: dict[str, str] | None = None
                 if rrule_value is not None:

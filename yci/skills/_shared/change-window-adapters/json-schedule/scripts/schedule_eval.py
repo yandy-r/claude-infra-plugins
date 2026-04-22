@@ -36,36 +36,6 @@ def _die(code: int, msg: str) -> None:
     sys.exit(code)
 
 
-def _parse_iso(ts_str: str, source_tz: str | None, label: str) -> datetime:
-    """Parse an ISO-8601 string to an aware UTC datetime.
-
-    If the string is already timezone-aware the tz is honoured directly.
-    If it is naive and source_tz is provided, it is localized to source_tz
-    then converted to UTC. If it is naive and source_tz is None it is treated
-    as UTC (with a stderr warning on first call — caller manages deduplication).
-    """
-    try:
-        dt = datetime.fromisoformat(ts_str)
-    except ValueError as exc:
-        _die(2, f"{ADAPTER_NAME} adapter: invalid date-time string '{ts_str}' at {label}: {exc}")
-
-    if dt.tzinfo is not None:
-        # Already aware — normalize to UTC.
-        return dt.astimezone(UTC)
-
-    # Naive timestamp.
-    if source_tz:
-        try:
-            tz_obj = ZoneInfo(source_tz)
-        except ZoneInfoNotFoundError:
-            _die(2, f"{ADAPTER_NAME} adapter: unknown timezone '{source_tz}' in calendar file")
-        dt = dt.replace(tzinfo=tz_obj).astimezone(UTC)
-    else:
-        dt = dt.replace(tzinfo=UTC)
-
-    return dt
-
-
 def _format_utc(dt: datetime) -> str:
     """Return a compact UTC string like 2026-04-22T14:00:00Z."""
     utc = dt.astimezone(UTC)

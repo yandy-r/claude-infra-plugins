@@ -63,7 +63,7 @@ parity deferred to Phase 1+.
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Hook directory shape     | `yci/hooks/customer-guard/` — `hook.json`, `scripts/pretool.sh`, `scripts/decision-json.sh`, `README.md`, `references/{capability-gaps,error-messages}.md`, `targets/codex/codex-config-fragment.toml`, `tests/{run-all,helpers}.sh` + `test_*.sh` |
 | Adapter directory shape  | `yci/skills/_shared/compliance-adapters/{hipaa,pci,soc2,commercial,none}/` — each has `ADAPTER.md` + scripts/check.sh or equivalent                                                                                                                |
-| Dispatcher shape         | `yci/skills/_shared/scripts/load-compliance-adapter.sh` — mirror exit-code taxonomy (0/1/2/3/4) and `--export-file` / `--print-path` flag set                                                                                                      |
+| Dispatcher shape         | `yci/skills/_shared/scripts/load-compliance-adapter.sh` — mirror exit-code taxonomy (0/1/2/3/4/5, where 5 = deferred adapter) and `--export-file` / `--print-path` flag set                                                                        |
 | Adapter-schema lib shape | `yci/skills/_shared/scripts/adapter-schema.sh` — sourceable bash, declares `*_REQUIRED_FILES`, `*_ADAPTERS` arrays plus `*_is_shipped()` helper                                                                                                    |
 | Profile loading          | `yci/skills/customer-profile/scripts/{profile-schema,resolve-customer,load-profile}.sh` — reuse verbatim (source-invoke from the hook)                                                                                                             |
 | Hook entrypoint idiom    | `#!/usr/bin/env bash` + `set -uo pipefail` (intentionally no `-e`, aggregating decision logic)                                                                                                                                                     |
@@ -200,10 +200,10 @@ batches run in order.
   `${CLAUDE_PLUGIN_ROOT}/skills/_shared/change-window-adapters/<name>/`; verifies required files.
   Modes: `--print-path` (stdout: resolved dir), `--export-file <file>` (write
   `export YCI_CW_ADAPTER_DIR=...` + `export YCI_CW_ADAPTER_NAME=...`), default `--print-path`. Exit
-  codes match compliance loader: 0 ok; 1 usage; 2 unknown adapter; 3 shipped-but-missing-files; 4
-  profile parse error. When `change_window` block is missing from profile AND
-  `safety.change_window_required: false` → resolve as `always-open` with stderr advisory. When
-  missing AND `safety.change_window_required: true` → exit 4.
+  codes mirror compliance-loader semantics plus deferred handling: 0 ok; 1 usage; 2 unknown adapter;
+  3 shipped-but-missing-files; 4 profile parse error; 5 deferred adapter. When `change_window` block
+  is missing from profile AND `safety.change_window_required: false` → resolve as `always-open` with
+  stderr advisory. When missing AND `safety.change_window_required: true` → exit 4.
 - **Validation**: shellcheck clean; unit test with mock profile JSON for each outcome.
 
 ### Batch 2 — Combined manifest + plugin.json pivot (sequential, parent worktree)
@@ -269,10 +269,10 @@ batches run in order.
     `--ts --source --timezone`; delegates to `ical_eval.py`. Propagates exit code.
   - `scripts/ical_eval.py`: stdlib-only `.ics` parser. Supports `VEVENT` with `DTSTART`/`DTEND`
     (date, date-time with/without `Z`, `TZID=...:...` resolved via `zoneinfo`), `SUMMARY`, `RRULE`
-    subset `FREQ=DAILY|WEEKLY|MONTHLY` with `COUNT` or `UNTIL`. Explicitly unsupported (documented +
-    rationale-messaged): inline `VTIMEZONE`, `BYDAY`/`BYSETPOS`. Logic: event covers ts → `blocked`;
-    no event covers but one starts within `warn_before_minutes` (default 60) → `warning`; else
-    `allowed`. Rationale string = `SUMMARY` + UTC-normalized window.
+    subset `FREQ=DAILY|WEEKLY` with `COUNT` or `UNTIL`. Explicitly unsupported (documented +
+    rationale-messaged): `FREQ=MONTHLY`, `INTERVAL`, inline `VTIMEZONE`, `BYDAY`/`BYSETPOS`. Logic:
+    event covers ts → `blocked`; no event covers but one starts within `warn_before_minutes`
+    (default 60) → `warning`; else `allowed`. Rationale string = `SUMMARY` + UTC-normalized window.
 - **Validation**: fixture `.ics` files in 5.1 exercise documented cases;
   `python3 -c "import ical_eval"` succeeds (no third-party deps).
 
