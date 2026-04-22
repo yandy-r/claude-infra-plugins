@@ -155,7 +155,7 @@ assert_hook_denies() {
 setup_test_sandbox() {
     local label="${1:-sandbox}"
     local sandbox
-    sandbox="$(mktemp -d -t "cwg-test-${$}-XXXXXX")"
+    sandbox="$(mktemp -d -t "cwg-test-${label}-${$}-XXXXXX")"
     mkdir -p "${sandbox}/profiles" "${sandbox}/artifacts" "${sandbox}/logs"
     export YCI_DATA_ROOT="$sandbox"
     printf '%s' "$sandbox"

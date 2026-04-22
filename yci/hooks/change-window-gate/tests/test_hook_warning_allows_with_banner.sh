@@ -4,8 +4,6 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 
-WARNING_FIXTURE="$(fixture_path "warning.ics")"
-
 # ---------------------------------------------------------------------------
 # Test: Write at ts 30 min before warning event → allow + stderr [WARNING]
 # warning.ics event starts at 13:00Z; ts 12:30Z is 30 min before (within 60-min warn)

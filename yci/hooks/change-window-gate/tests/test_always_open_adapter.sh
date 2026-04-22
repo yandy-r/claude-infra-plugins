@@ -26,7 +26,6 @@ test_always_open_future() {
 }
 
 test_always_open_no_flags() {
-    local sb="$1"
     local out rc
     out="$("$ALWAYS_OPEN_CHECK" 2>/dev/null)"; rc=$?
     assert_exit 0 "$rc" "always-open no flags: exit 0"

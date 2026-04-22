@@ -141,7 +141,7 @@ print(cw.get("timezone") or "UTC")
     # Step 5: Validate adapter output.
     # ------------------------------------------------------------------
     if [[ "$adapter_rc" -eq 0 ]] && [[ -n "$adapter_stdout" ]]; then
-        local validate_result validate_err
+        local validate_result
         if validate_result="$(printf '%s\n' "$adapter_stdout" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())

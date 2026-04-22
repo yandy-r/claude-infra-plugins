@@ -23,7 +23,6 @@ _assert_read_only_allowed() {
 }
 
 test_read_tool_allows() {
-    local sb="$1"
     _assert_read_only_allowed \
         '{"tool_name":"Read","tool_input":{"file_path":"/tmp/foo"}}' \
         "hook read-only: Read"

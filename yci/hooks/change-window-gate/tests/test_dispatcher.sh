@@ -104,7 +104,6 @@ test_dispatcher_adapter_flag() {
 # Test: --export flag emits shell export lines
 # ---------------------------------------------------------------------------
 test_dispatcher_export_flag() {
-    local sb="$1"
     local pf rc out
     pf="$(_profile_json_with_adapter "none")"
     out="$("$DISPATCHER" --profile-json-path "$pf" --export 2>/dev/null)"; rc=$?

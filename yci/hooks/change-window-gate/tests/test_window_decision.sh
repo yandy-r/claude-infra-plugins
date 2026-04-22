@@ -17,8 +17,7 @@ source "${YCI_CWG_SCRIPTS_DIR}/window-decision.sh"
 # ---------------------------------------------------------------------------
 _make_profile_json() {
     local sandbox="$1" customer_id="$2" adapter="$3" source="${4:-}"
-    local yaml_path json_path
-    yaml_path="${sandbox}/profiles/${customer_id}.yaml"
+    local json_path
     json_path="$(mktemp "${sandbox}/profile-XXXXXX.json")"
 
     write_profile_yaml "$sandbox" "$customer_id" "$adapter" "$source"
