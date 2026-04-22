@@ -14,8 +14,12 @@ import shlex
 import sys
 import urllib.parse
 
-# Regex for scanning path-like tokens in Task.prompt and unknown-tool fallback.
-PATH_HINT_RE = re.compile(r"(?:^|\s)([~./][\w./@-]{2,})")
+# Regex for scanning path-like tokens in Task.prompt, Bash compound commands,
+# and unknown-tool fallback. The preceding-char class admits shell delimiters
+# like `(`, `$`, `=`, `"`, `'`, `;` so absolute paths embedded inside command
+# substitution (`$(/path)`), variable assignments (`X=/path`), or quoted args
+# ("$(cmd)") get surfaced even when shlex.split merges them into one token.
+PATH_HINT_RE = re.compile(r"(?:^|[^\w.~/@-])([~./][\w./@-]{2,})")
 
 # Regex to identify path-looking tokens from Bash command splits.
 # A token looks like a path if it starts with /, ~/, ./, ../, or contains a /
@@ -23,11 +27,22 @@ PATH_HINT_RE = re.compile(r"(?:^|\s)([~./][\w./@-]{2,})")
 _PATH_START_RE = re.compile(r"^(?:/|~/|\.{1,2}/)")
 _PATH_SLASH_RE = re.compile(r"[a-zA-Z0-9][/][a-zA-Z0-9]")
 
+# Shell metacharacters that signal a shlex token is NOT a real filesystem path
+# but a shell-syntax artifact — variable assignment (`NAME=value`), command
+# substitution (`$(cmd)`), subshell (`(cmd)`), statement separator (`;`), pipe
+# (`|`), background (`&`), redirection (`<`, `>`), or backtick substitution.
+# shlex.split does not decompose these constructs, so tokens containing them
+# must not be synthesized into paths against cwd — doing so produces junk like
+# `/cwd/DATA_ROOT=$(...)` that the downstream consumer mis-classifies as real.
+_SHELL_META_RE = re.compile(r"[=$();&|<>`]")
+
 
 def _looks_like_path(token: str) -> bool:
     """Return True if the token looks like a filesystem path."""
     if _PATH_START_RE.match(token):
         return True
+    if _SHELL_META_RE.search(token):
+        return False
     if "/" in token and _PATH_SLASH_RE.search(token):
         return True
     return False
@@ -73,6 +88,15 @@ def _extract_from_bash(command: str, cwd: str, paths: "dict[str, None]") -> None
     for token in tokens:
         if _looks_like_path(token):
             _emit(paths, token, cwd)
+
+    # Supplemental hint-regex scan of the raw command string. shlex.split
+    # doesn't decompose shell-syntax constructs — compound commands, variable
+    # assignments with command substitution (`X="$(...)"`), subshells, etc. —
+    # so absolute paths embedded in those constructs never surface as their
+    # own token. The hint regex walks the whole command accepting shell
+    # delimiters before a path start, so `$(/plugin/bin/tool)` still yields
+    # `/plugin/bin/tool`. _emit dedupes against tokens already added above.
+    _scan_for_path_hints(command, cwd, paths)
 
 
 def _scan_for_path_hints(text: str, cwd: str, paths: "dict[str, None]") -> None:

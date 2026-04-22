@@ -315,6 +315,40 @@ test_yci_bash_mixed_paths_denied() {
 }
 
 # ---------------------------------------------------------------------------
+# Regression: when Claude Code's agent constructs the canonical bootstrap
+# compound — `DATA_ROOT="$(resolve-data-root.sh)"; init-profile.sh "$DATA_ROOT"
+# <customer>` — shlex.split merges the variable assignment and command
+# substitution into one token. Prior versions of extract-paths.py synthesized
+# a junk path from that token against cwd, which the bootstrap lane then
+# classified as foreign and denied. The fix is to pull real paths out of the
+# raw command via the hint regex and skip shell-syntax tokens.
+# ---------------------------------------------------------------------------
+test_yci_bash_compound_bootstrap_allowed() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_bash_compound_bootstrap: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local resolve="${REPO_ROOT}/yci/skills/_shared/scripts/resolve-data-root.sh"
+    local init="${REPO_ROOT}/yci/skills/customer-profile/scripts/init-profile.sh"
+    local cmd="DATA_ROOT=\"\$(${resolve})\"; ${init} \"\$DATA_ROOT\" itcn"
+    local payload
+    payload="$(python3 -c 'import json, sys; print(json.dumps({"tool_name": "Bash", "tool_input": {"command": sys.argv[1]}}))' "$cmd")"
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_bash_compound_bootstrap: exit 0"
+    assert_eq "$stdout" "" "yci_bash_compound_bootstrap: stdout empty (allow)"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
 test_yci_bash_bootstrap_allowed() {
     local sb="$1"
     _pretool_ok || { _yci_test_report PASS "yci_bash_bootstrap: skipped (pretool.sh not found)"; return 0; }
@@ -372,6 +406,7 @@ with_sandbox test_yci_slash_command_bootstrap_allowed
 with_sandbox test_yci_bash_ls_data_root_allowed
 with_sandbox test_yci_read_data_root_allowed
 with_sandbox test_yci_bash_mixed_paths_denied
+with_sandbox test_yci_bash_compound_bootstrap_allowed
 with_sandbox test_yci_bash_bootstrap_allowed
 with_sandbox test_ycc_skill_allowed
 

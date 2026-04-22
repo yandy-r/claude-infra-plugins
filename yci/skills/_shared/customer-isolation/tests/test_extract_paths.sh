@@ -150,6 +150,54 @@ test_missing_file_path() {
     assert_exit 0 "$rc" "missing_fp: exits 0"
 }
 
+test_bash_compound_with_command_substitution() {
+    _require_extractor || return 1
+    local cmd='DATA_ROOT="$(/plugins/yci/skills/_shared/scripts/resolve-data-root.sh)"; /plugins/yci/skills/customer-profile/scripts/init-profile.sh "$DATA_ROOT" itcn'
+    local json
+    json="$(python3 -c 'import json, sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$cmd")"
+    local out
+    out="$(printf '%s' "$json" | python3 "$EXTRACTOR" 2>/dev/null)"
+
+    assert_contains "$out" "/plugins/yci/skills/_shared/scripts/resolve-data-root.sh" \
+        "compound_cmdsub: extracts path inside \$(...)"
+    assert_contains "$out" "/plugins/yci/skills/customer-profile/scripts/init-profile.sh" \
+        "compound_cmdsub: extracts standalone path after ;"
+    # The synthesized junk path must NOT appear.
+    case "$out" in
+        *'DATA_ROOT=$'*)
+            _yci_test_report FAIL "compound_cmdsub: synthesized junk path leaked into output"
+            return 1
+            ;;
+        *)
+            _yci_test_report PASS "compound_cmdsub: no synthesized junk path"
+            ;;
+    esac
+}
+
+test_bash_variable_assignment_with_literal() {
+    _require_extractor || return 1
+    # `X=/literal/path` — shlex returns a single token containing `=`. Ensure
+    # we don't synthesize `/cwd/X=/literal/path`; instead pull `/literal/path`
+    # out via the hint regex.
+    local cmd='X=/literal/plugin/bin/tool'
+    local json
+    json="$(python3 -c 'import json, sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$cmd")"
+    local out
+    out="$(printf '%s' "$json" | python3 "$EXTRACTOR" 2>/dev/null)"
+
+    assert_contains "$out" "/literal/plugin/bin/tool" \
+        "var_assignment: extracts literal path on RHS"
+    case "$out" in
+        *'X='*)
+            _yci_test_report FAIL "var_assignment: leaked \`X=\` prefix"
+            return 1
+            ;;
+        *)
+            _yci_test_report PASS "var_assignment: no \`X=\` prefix leak"
+            ;;
+    esac
+}
+
 test_invalid_json() {
     _require_extractor || return 1
     local stderr_out rc
@@ -174,6 +222,8 @@ with_sandbox test_webfetch_https
 with_sandbox test_task_prompt
 with_sandbox test_relative_with_cwd
 with_sandbox test_missing_file_path
+with_sandbox test_bash_compound_with_command_substitution
+with_sandbox test_bash_variable_assignment_with_literal
 with_sandbox test_invalid_json
 
 yci_test_summary
