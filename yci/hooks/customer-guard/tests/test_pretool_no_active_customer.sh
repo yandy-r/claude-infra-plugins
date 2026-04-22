@@ -231,6 +231,90 @@ test_yci_slash_command_bootstrap_allowed() {
 }
 
 # ---------------------------------------------------------------------------
+# After the bootstrap Skill call lands, the customer-profile skill typically
+# inspects the data root with `ls <data-root>/profiles` before picking or
+# creating a profile. That payload has ONLY data-root paths (no repo-bootstrap
+# path), but is still legitimate bootstrap work and must be allowed.
+# ---------------------------------------------------------------------------
+test_yci_bash_ls_data_root_allowed() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_bash_ls_data_root: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local cmd="ls ${data}/profiles"
+    local payload
+    payload="$(python3 -c 'import json, sys; print(json.dumps({"tool_name": "Bash", "tool_input": {"command": sys.argv[1]}}))' "$cmd")"
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_bash_ls_data_root: exit 0"
+    assert_eq "$stdout" "" "yci_bash_ls_data_root: stdout empty (allow)"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
+# Reading the resolved data root with the Read tool must also be allowed
+# during bootstrap — the skill uses Read on state.json and profile YAML files.
+# ---------------------------------------------------------------------------
+test_yci_read_data_root_allowed() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_read_data_root: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+    : > "$data/state.json"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local payload
+    payload="$(python3 -c 'import json, sys; print(json.dumps({"tool_name": "Read", "tool_input": {"file_path": sys.argv[1]}}))' "$data/state.json")"
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_read_data_root: exit 0"
+    assert_eq "$stdout" "" "yci_read_data_root: stdout empty (allow)"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
+# A Bash payload that mixes a yci data-root path with a non-yci path is NOT
+# bootstrap — deny. This guards against an agent using the bootstrap lane to
+# smuggle foreign-path reads.
+# ---------------------------------------------------------------------------
+test_yci_bash_mixed_paths_denied() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_bash_mixed_paths_denied: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local cmd="cp ${data}/profiles/acme.yaml /tmp/exfiltrated.yaml"
+    local payload
+    payload="$(python3 -c 'import json, sys; print(json.dumps({"tool_name": "Bash", "tool_input": {"command": sys.argv[1]}}))' "$cmd")"
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_bash_mixed_paths_denied: exit 0 (deny emitted as JSON)"
+    assert_contains "$stdout" '"permissionDecision": "deny"' "yci_bash_mixed_paths_denied: decision=deny"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
 test_yci_bash_bootstrap_allowed() {
     local sb="$1"
     _pretool_ok || { _yci_test_report PASS "yci_bash_bootstrap: skipped (pretool.sh not found)"; return 0; }
@@ -285,6 +369,9 @@ with_sandbox test_yci_skill_switch_bootstrap_allowed
 with_sandbox test_yci_skill_whoami_bootstrap_allowed
 with_sandbox test_yci_skill_non_customer_profile_denied
 with_sandbox test_yci_slash_command_bootstrap_allowed
+with_sandbox test_yci_bash_ls_data_root_allowed
+with_sandbox test_yci_read_data_root_allowed
+with_sandbox test_yci_bash_mixed_paths_denied
 with_sandbox test_yci_bash_bootstrap_allowed
 with_sandbox test_ycc_skill_allowed
 

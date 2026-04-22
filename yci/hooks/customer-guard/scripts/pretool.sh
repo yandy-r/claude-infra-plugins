@@ -171,13 +171,24 @@ PY
 _bootstrap_payload_allowed_without_active_customer() {
     local payload="$1"
     local extractor="${YCI_ROOT}/skills/_shared/customer-isolation/scripts/extract-paths.py"
-    local has_repo_bootstrap_path=0
     local has_any_path=0
     local path
 
     # This bootstrap lane is intentionally yci-only. It exists to let
     # /yci:init and /yci:switch establish an active customer; it must not
     # soften the no-active-customer posture for ycc or general tool calls.
+    #
+    # Bootstrap intent is recognised two ways:
+    #   1. A bootstrap marker in the payload (slash command, or a structural
+    #      Skill(yci:customer-profile) invocation). See _bootstrap_marker_present.
+    #   2. Every extracted path falls within the yci plugin tree (${YCI_ROOT})
+    #      or the yci data root (${YCI_DATA_ROOT_RESOLVED}). This covers the
+    #      skill's normal follow-on work: reading its own scripts, listing the
+    #      profiles directory, reading/writing state.json, and touching profile
+    #      YAML files. Isolation has no "active" baseline to protect yet, and
+    #      profiles are documented as secret-free (PRD §11.9), so the risk of a
+    #      profile-dir peek is limited to metadata that the operator is about
+    #      to set anyway.
     if _bootstrap_marker_present "$payload"; then
         return 0
     fi
@@ -186,18 +197,10 @@ _bootstrap_payload_allowed_without_active_customer() {
         [ -n "$path" ] || continue
         has_any_path=1
         case "$path" in
-            "${YCI_ROOT}/commands/init.md"|\
-            "${YCI_ROOT}/commands/switch.md"|\
-            "${YCI_ROOT}/skills/customer-profile/SKILL.md"|\
-            "${YCI_ROOT}/skills/customer-profile/"*|\
-            "${YCI_ROOT}/skills/_shared/scripts/resolve-data-root.sh")
-                has_repo_bootstrap_path=1
-                ;;
+            "${YCI_ROOT}"|\
+            "${YCI_ROOT}/"*|\
             "${YCI_DATA_ROOT_RESOLVED}"|\
-            "${YCI_DATA_ROOT_RESOLVED}/profiles"|\
-            "${YCI_DATA_ROOT_RESOLVED}/profiles/"*|\
-            "${YCI_DATA_ROOT_RESOLVED}/state.json"|\
-            "${YCI_DATA_ROOT_RESOLVED}/.state.json."*)
+            "${YCI_DATA_ROOT_RESOLVED}/"*)
                 ;;
             *)
                 return 1
@@ -206,7 +209,6 @@ _bootstrap_payload_allowed_without_active_customer() {
     done < <(printf '%s' "$payload" | python3 "$extractor")
 
     [ "$has_any_path" -eq 1 ] || return 1
-    [ "$has_repo_bootstrap_path" -eq 1 ] || return 1
 }
 
 # ---------------------------------------------------------------------------
