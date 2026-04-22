@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "yci",
+  "description": "Yandy's Claude Infrastructure toolkit — consulting and systems-integration workflows with customer isolation, compliance adapters, and change-window enforcement.",
+  "owner": {
+    "name": "yandy-r"
+  },
+  "metadata": {
+    "version": "0.2.0",
+    "repository": "https://github.com/yandy-r/claude-infra-plugins"
+  },
+  "plugins": [
+    {
+      "name": "yci",
+      "description": "Yandy's Claude Infrastructure toolkit — customer profiles, compliance-adapter pattern, customer-guard PreToolUse hook, change-window enforcement, and evidence-bundle packaging for consulting / SI work.",
+      "version": "0.2.0",
+      "author": {
+        "name": "yandy-r"
+      },
+      "source": "./yci"
+    }
+  ]
+}

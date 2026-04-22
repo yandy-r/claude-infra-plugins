@@ -1,0 +1,30 @@
+name: Validate bundle
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-bundle:
+    name: validate-bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python deps
+        run: pip install pyyaml
+
+      - name: Install pinned shellcheck
+        run: ./scripts/install-shellcheck.sh
+
+      - name: Run unified validator
+        run: ./scripts/validate.sh

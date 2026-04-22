@@ -1,0 +1,12 @@
+# yci customer-isolation fixture cache (populated on the fly by detect.sh
+# during test runs; regenerated as needed — never a source artifact)
+yci/skills/*/tests/fixtures/.cache/
+
+# Agent-managed worktrees (redirected to ~/.claude-worktrees/ by the user hook,
+# but in case the harness default leaks, ignore defensively)
+.claude/worktrees/
+
+# Editor / OS detritus
+.DS_Store
+*.swp
+*~

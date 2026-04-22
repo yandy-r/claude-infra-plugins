@@ -1,0 +1,2 @@
+# Single source of truth for toolchain pins (asdf-compatible; used by scripts/install-shellcheck.sh).
+shellcheck 0.10.0
