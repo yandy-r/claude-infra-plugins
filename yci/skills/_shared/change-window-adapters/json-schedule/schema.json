@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/yandy-r/claude-infra-plugins/yci/skills/_shared/change-window-adapters/json-schedule/schema.json",
+  "title": "JSON-schedule blackout calendar",
+  "description": "Minimum-viable change-window blackout calendar for operators who do not maintain an iCal server. Defines a list of time-bounded blackout windows and optional warning threshold.",
+  "type": "object",
+  "required": ["blackouts"],
+  "additionalProperties": false,
+  "properties": {
+    "blackouts": {
+      "type": "array",
+      "description": "List of blackout windows during which changes are not permitted.",
+      "items": {
+        "type": "object",
+        "required": ["start", "end"],
+        "additionalProperties": false,
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 date-time string for when the blackout window begins. Prefer UTC (Z suffix) to avoid ambiguity."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 date-time string for when the blackout window ends (exclusive). Must be after start."
+          },
+          "label": {
+            "type": "string",
+            "description": "Optional human-readable name shown in hook deny-rationale text (e.g. 'Production freeze', 'CAB blackout')."
+          }
+        }
+      }
+    },
+    "warn_before_minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minutes before an upcoming blackout start at which to emit a warning decision instead of allowed. Defaults to 60 if absent.",
+      "default": 60
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA timezone name (e.g. 'America/Chicago') used to interpret naive timestamps in blackout entries. If absent, naive timestamps are treated as UTC."
+    }
+  }
+}
