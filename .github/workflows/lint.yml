@@ -24,8 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Install pinned shellcheck
+        # Use the same pinned version .tool-versions declares (resolve_shellcheck_bin
+        # in scripts/lib/shellcheck-resolve.sh prefers <repo>/tools/shellcheck).
+        # apt ships older shellcheck versions whose warnings diverge from the pin.
+        run: ./scripts/install-shellcheck.sh
       - run: ./scripts/style.sh lint --shell
 
   lint-docs:

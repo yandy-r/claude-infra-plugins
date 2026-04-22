@@ -36,8 +36,9 @@ jobs:
           python-version: "3.12"
       - run: pip install --no-cache-dir ruff black
 
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Install pinned shellcheck
+        # Match the .tool-versions pin; apt-installed shellcheck diverges.
+        run: ./scripts/install-shellcheck.sh
 
       - uses: actions/setup-node@v4
         with:
