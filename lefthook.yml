@@ -1,0 +1,23 @@
+# lefthook.yml — git hook manager for claude-infra-plugins
+#
+# Install with ./scripts/install-lefthook.sh (bootstraps the binary and runs
+# `lefthook install` to wire .git/hooks). See docs/lefthook-usage.md for details.
+#
+# Bypass a hook once:   git commit --no-verify / git push --no-verify
+# Skip in CI:           lefthook checks CI=true automatically; no config needed.
+
+pre-commit:
+  parallel: true
+  commands:
+    # Managed by ycc:formatters — keep these in sync via `ycc:formatters --sync`.
+    style-lint:
+      run: ./scripts/style.sh lint --staged --fix
+      stage_fixed: true
+    style-format:
+      run: ./scripts/style.sh format --staged
+      stage_fixed: true
+
+pre-push:
+  commands:
+    validate:
+      run: ./scripts/validate.sh

@@ -1,0 +1,19 @@
+{
+  "name": "project",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "./scripts/style.sh lint",
+    "lint:fix": "./scripts/style.sh lint --fix",
+    "lint:modified": "./scripts/style.sh lint --modified",
+    "format": "./scripts/style.sh format",
+    "format:modified": "./scripts/style.sh format --modified"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "markdownlint-cli": "^0.42.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}

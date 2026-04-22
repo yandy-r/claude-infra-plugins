@@ -1,0 +1,19 @@
+# Managed by style.sh init
+style.sh
+format.sh
+lint.sh
+init-formatters.sh
+go-tools.sh
+lib/modified-files.sh
+lib/excludes.sh
+lib/shellcheck-resolve.sh
+templates/markdownlint.json
+templates/markdownlintignore
+templates/prettierrc.json
+templates/prettierignore
+templates/python-pyproject.toml
+templates/rustfmt.toml
+templates/clippy.toml
+templates/biome.json
+templates/tsconfig.json
+templates/package.json

@@ -10,3 +10,8 @@ yci/skills/*/tests/fixtures/.cache/
 .DS_Store
 *.swp
 *~
+
+# Misc
+/node_modules/
+/tools/
+package.json.bak
