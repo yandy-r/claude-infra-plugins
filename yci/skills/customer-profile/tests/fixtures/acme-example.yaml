@@ -24,6 +24,11 @@ compliance:
   regime: hipaa
   evidence_schema_version: 1
   baa_reference: BAA-ACM-2026-001
+  signing:
+    method: ssh-keygen-y-sign
+    key_ref: vault://ops/acme/ssh-signing
+    identity: acme-ops@example.com
+    pubkey: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIexample
 
 change_window:
   adapter: json-schedule

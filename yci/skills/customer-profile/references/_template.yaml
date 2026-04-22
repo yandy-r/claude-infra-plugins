@@ -37,6 +37,11 @@ compliance:
   regime: '<TODO: hipaa|pci|sox|soc2|iso27001|nist|commercial|none>'
   # baa_reference: "<TODO: BAA document reference — HIPAA engagements only>"
   evidence_schema_version: '<TODO: integer e.g. 1>'
+  # signing:
+  #   method: "<TODO: minisign|ssh-keygen-y-sign>"
+  #   key_ref: "<TODO: signing key reference or path>"
+  #   identity: "<TODO: required when method=ssh-keygen-y-sign>"
+  #   pubkey: "<TODO: optional verifier reference included in bundle metadata>"
 
 # change_window:
 #   adapter: "<TODO: ical|servicenow-cab|json-schedule|always-open|none>"

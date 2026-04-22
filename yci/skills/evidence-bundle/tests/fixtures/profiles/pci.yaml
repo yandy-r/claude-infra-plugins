@@ -1,0 +1,28 @@
+customer:
+  id: test
+  display_name: Test PCI
+engagement:
+  id: eng-pci
+  type: implementation
+  sow_ref: SOW-PCI-1
+  scope_tags: [network]
+  start_date: '2026-01-01'
+  end_date: '2026-12-31'
+compliance:
+  regime: pci
+  evidence_schema_version: 1
+  signing:
+    method: minisign
+    key_ref: __KEY_REF__
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: local/header.md
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn

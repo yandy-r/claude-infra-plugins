@@ -1,0 +1,17 @@
+git:
+  commit_range: abc123..def456
+  diff_path: pci.diff
+approvals:
+  - CAB-PCI approved by ops@example.com
+pre_state:
+  - artifacts/pre-pci.txt
+post_state:
+  - artifacts/post-pci.txt
+operator_identity: pci-ops@example.com
+tenant_scope:
+  - cde-east
+timestamps:
+  generated_at: '2026-04-21T15:00:00Z'
+  executed_at: '2026-04-21T14:45:00Z'
+pci:
+  cde_boundary_attestation: Change is limited to the east CDE edge pair.

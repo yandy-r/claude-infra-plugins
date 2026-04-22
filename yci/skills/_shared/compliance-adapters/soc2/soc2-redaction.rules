@@ -1,0 +1,7 @@
+# SOC 2 handoff redaction rules.
+
+NAME:internal_ticket
+RE:\b(?:INC|CHG|REQ)-\d{5,}\b
+
+NAME:internal_hostname
+RE:(?i)\b[a-z0-9][a-z0-9\-]*\.(?:corp|internal|intranet)\b

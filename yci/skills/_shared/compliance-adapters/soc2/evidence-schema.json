@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yci.example/compliance-adapters/soc2/evidence-schema/1",
+  "title": "yci soc2 evidence bundle",
+  "description": "Required-field schema for evidence bundles produced under the SOC 2 compliance regime. Version 1.",
+  "type": "object",
+  "required": [
+    "change_id",
+    "change_summary",
+    "pre_check_artifacts",
+    "post_check_artifacts",
+    "rollback_plan",
+    "approver",
+    "timestamp_utc",
+    "profile_commit",
+    "control_mappings",
+    "operator_identity"
+  ],
+  "properties": {
+    "change_id": { "type": "string" },
+    "change_summary": { "type": "string" },
+    "pre_check_artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "post_check_artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "rollback_plan": { "type": "string" },
+    "approver": { "type": "string" },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "profile_commit": { "type": "string" },
+    "control_mappings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "operator_identity": { "type": "string" },
+    "customer_id": { "type": "string" },
+    "engagement_id": { "type": "string" },
+    "tenant_scope": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tenant_scope_summary": { "type": "string" },
+    "approvals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "git_commit_range": { "type": "string" },
+    "diff_path": { "type": "string" },
+    "diff_excerpt": { "type": "string" },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "executed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "compliance_regime": { "type": "string" },
+    "signature_method": { "type": "string" },
+    "signature_key_ref": { "type": "string" },
+    "signature_identity": { "type": "string" },
+    "signature_pubkey": { "type": "string" },
+    "schema_version": { "type": "string" },
+    "yci_commit": { "type": "string" },
+    "rollback_plan_path": { "type": "string" },
+    "blast_radius_label": { "type": "string" },
+    "rollback_confidence": { "type": "string" },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

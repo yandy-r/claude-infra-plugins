@@ -8,3 +8,6 @@ Azure 12345678-1234-1234-1234-123456789abc
 Host app.acme-corp.example.com
 SSN 123-45-6789
 MRN # 123456789
+Patient Name: mary-jane o'connor jr
+Patient Name: JOHN Q. PUBLIC III
+Patient Name: Ana-Maria O'Brien

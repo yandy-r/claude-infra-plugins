@@ -144,7 +144,115 @@ test_commercial_resolves_commercial() {
 }
 
 # ---------------------------------------------------------------------------
-# Case 3 — unknown regime → exit 2 + stderr phrase
+# Case 3 — synthetic PCI profile → pci adapter
+# ---------------------------------------------------------------------------
+test_pci_resolves_pci() {
+    local sb="$1"
+
+    if ! _loader_present; then
+        _yci_test_report SKIP "pci (load-profile absent)"; return 0
+    fi
+    if ! _adapter_loader_present; then
+        _yci_test_report SKIP "pci (adapter loader absent)"; return 0
+    fi
+
+    mkdir -p "$sb/real/profiles"
+    cat > "$sb/real/profiles/pci-example.yaml" <<'EOF'
+customer:
+  id: pci-example
+  display_name: "PCI Example"
+engagement:
+  id: eng-pci
+  type: implementation
+  sow_ref: SOW-PCI
+  scope_tags: [network]
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
+compliance:
+  regime: pci
+  evidence_schema_version: 1
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: "Deliverable"
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn
+EOF
+
+    local profile_json profile_rc
+    profile_json="$("$LOADER" "$sb/real" pci-example 2>"$sb/load_err")"
+    profile_rc=$?
+    assert_exit 0 "$profile_rc" "pci: load-profile exit 0"
+
+    local adapter_path adapter_rc
+    adapter_path="$(printf '%s\n' "$profile_json" | "$ADAPTER_LOADER" 2>"$sb/adapter_err")"
+    adapter_rc=$?
+    assert_exit 0 "$adapter_rc" "pci: load-compliance-adapter exit 0"
+    assert_contains "$adapter_path" "/compliance-adapters/pci" "pci: resolves pci adapter"
+}
+
+# ---------------------------------------------------------------------------
+# Case 4 — synthetic SOC2 profile → soc2 adapter
+# ---------------------------------------------------------------------------
+test_soc2_resolves_soc2() {
+    local sb="$1"
+
+    if ! _loader_present; then
+        _yci_test_report SKIP "soc2 (load-profile absent)"; return 0
+    fi
+    if ! _adapter_loader_present; then
+        _yci_test_report SKIP "soc2 (adapter loader absent)"; return 0
+    fi
+
+    mkdir -p "$sb/real/profiles"
+    cat > "$sb/real/profiles/soc2-example.yaml" <<'EOF'
+customer:
+  id: soc2-example
+  display_name: "SOC2 Example"
+engagement:
+  id: eng-soc2
+  type: implementation
+  sow_ref: SOW-SOC2
+  scope_tags: [network]
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
+compliance:
+  regime: soc2
+  evidence_schema_version: 1
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: "Deliverable"
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn
+EOF
+
+    local profile_json profile_rc
+    profile_json="$("$LOADER" "$sb/real" soc2-example 2>"$sb/load_err")"
+    profile_rc=$?
+    assert_exit 0 "$profile_rc" "soc2: load-profile exit 0"
+
+    local adapter_path adapter_rc
+    adapter_path="$(printf '%s\n' "$profile_json" | "$ADAPTER_LOADER" 2>"$sb/adapter_err")"
+    adapter_rc=$?
+    assert_exit 0 "$adapter_rc" "soc2: load-compliance-adapter exit 0"
+    assert_contains "$adapter_path" "/compliance-adapters/soc2" "soc2: resolves soc2 adapter"
+}
+
+# ---------------------------------------------------------------------------
+# Case 5 — unknown regime → exit 2 + stderr phrase
 # ---------------------------------------------------------------------------
 test_unknown_regime_exits_2() {
     local sb="$1"
@@ -180,6 +288,8 @@ main() {
 
     with_sandbox test_internal_resolves_none
     with_sandbox test_commercial_resolves_commercial
+    with_sandbox test_pci_resolves_pci
+    with_sandbox test_soc2_resolves_soc2
     with_sandbox test_unknown_regime_exits_2
 
     yci_test_summary

@@ -43,6 +43,9 @@ YCI_SAFETY_REQUIRED=(default_posture change_window_required scope_enforcement)
 # Values for compliance.regime (schema.md "Compliance regimes" / PRD §11.2).
 YCI_COMPLIANCE_REGIMES=(hipaa pci sox soc2 iso27001 nist commercial none)
 
+# Values for compliance.signing.method (PRD §11.6).
+YCI_SIGNING_METHODS=(minisign ssh-keygen-y-sign)
+
 # Values for safety.default_posture (schema.md "Safety postures" / PRD §11.7).
 YCI_SAFETY_POSTURES=(dry-run review apply)
 

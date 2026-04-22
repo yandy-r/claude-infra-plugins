@@ -43,6 +43,7 @@ export YCI_ENGAGEMENT_TYPES_ENV="${YCI_ENGAGEMENT_TYPES[*]}"
 export YCI_SCOPE_ENFORCEMENT_ENV="${YCI_SCOPE_ENFORCEMENT[*]}"
 export YCI_HANDOFF_FORMATS_ENV="${YCI_DELIVERABLE_HANDOFF_FORMATS[*]}"
 export YCI_CHANGE_WINDOW_ADAPTERS_ENV="${YCI_CHANGE_WINDOW_ADAPTERS[*]}"
+export YCI_SIGNING_METHODS_ENV="${YCI_SIGNING_METHODS[*]}"
 
 python3 - "$profile_path" <<'PY'
 import json, os, sys
@@ -148,6 +149,47 @@ if isinstance(cw, dict):
             "  see yci/skills/customer-profile/references/schema.md for the canonical enum lists\n"
         )
         sys.exit(2)
+
+# compliance.signing is optional. When present it must be a mapping with a
+# valid signing method and non-empty key_ref. ssh-keygen-y-sign additionally
+# requires an identity value to map onto -I.
+signing = data.get("compliance", {}).get("signing")
+if signing is not None:
+    if not isinstance(signing, dict):
+        sys.stderr.write(
+            "yci: invalid value for 'compliance.signing': expected a mapping\n"
+            "  see yci/skills/customer-profile/references/schema.md for the signing schema\n"
+        )
+        sys.exit(2)
+
+    method = signing.get("method")
+    allowed_methods = set(os.environ["YCI_SIGNING_METHODS_ENV"].split())
+    if method is None or str(method) not in allowed_methods:
+        sys.stderr.write(
+            f"yci: invalid value for 'compliance.signing.method': '{method}'\n"
+            f"  allowed values: {sorted(allowed_methods)}\n"
+            "  see yci/skills/customer-profile/references/schema.md for the canonical enum lists\n"
+        )
+        sys.exit(2)
+
+    key_ref = signing.get("key_ref")
+    if not isinstance(key_ref, str) or not key_ref.strip():
+        sys.stderr.write(
+            "yci: missing required field 'compliance.signing.key_ref' in profile: "
+            f"{path}\n"
+            "  see yci/skills/customer-profile/references/schema.md for required fields\n"
+        )
+        sys.exit(2)
+
+    if method == "ssh-keygen-y-sign":
+        identity = signing.get("identity")
+        if not isinstance(identity, str) or not identity.strip():
+            sys.stderr.write(
+                "yci: missing required field 'compliance.signing.identity' in profile: "
+                f"{path}\n"
+                "  ssh-keygen-y-sign requires an identity value for signature verification\n"
+            )
+            sys.exit(2)
 
 # --- unknown top-level key warning (stderr, not error) ----------------------
 allowed_top = set(req_top) | set(opt_top)

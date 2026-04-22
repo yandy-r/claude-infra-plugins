@@ -69,6 +69,19 @@ via the precedence chain: `--data-root <path>` > `$YCI_DATA_ROOT` > `~/.config/y
 | `regime`                  | string  | yes      | see **Compliance regimes** enum below | Selects the compliance adapter          |
 | `baa_reference`           | string  | no       | any string                            | BAA / DPA reference (HIPAA customers)   |
 | `evidence_schema_version` | integer | yes      | `1` (current)                         | Adapter evidence-schema version to load |
+| `signing`                 | object  | no       | see nested table below                | Profile-scoped evidence signing config  |
+
+#### `compliance.signing`
+
+Optional. When present, `yci:evidence-bundle` uses this subtree to select the
+signing backend for the final evidence pack.
+
+| Field      | Type   | Required | Allowed values                  | Notes                                                                  |
+| ---------- | ------ | -------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `method`   | string | yes      | `minisign`, `ssh-keygen-y-sign` | Signing backend to use for the evidence bundle                         |
+| `key_ref`  | string | yes      | any string                      | Path / vault reference for the signing key or allowed-signers config   |
+| `identity` | string | cond.    | any string                      | Required when `method: ssh-keygen-y-sign`; mapped to `ssh-keygen -I`   |
+| `pubkey`   | string | no       | any string                      | Optional public-key or verifier reference emitted into bundle metadata |
 
 ---
 

@@ -502,6 +502,132 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Optional compliance.signing subtree validation
+# ---------------------------------------------------------------------------
+test_signing_subtree_minisign() {
+    local sb="$1"
+    _loader_missing_diagnostic || { _yci_test_report PASS "signing_minisign: skipped (loader absent)"; return 0; }
+    mkdir -p "$sb/real/profiles"
+    cat > "$sb/real/profiles/signing-minisign.yaml" <<'EOF'
+customer:
+  id: signing-minisign
+  display_name: "Signing Minisign"
+engagement:
+  id: eng-001
+  type: implementation
+  sow_ref: SOW-1
+  scope_tags: [net]
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
+compliance:
+  regime: hipaa
+  evidence_schema_version: 1
+  baa_reference: BAA-1
+  signing:
+    method: minisign
+    key_ref: vault://ops/acme/minisign
+    pubkey: RWQeXAMPLEPUBKEY
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: "Deliv"
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn
+EOF
+    local out rc
+    out="$("$LOADER" "$sb/real" signing-minisign 2>"$sb/err")"; rc=$?
+    assert_exit 0 "$rc" "signing_minisign: exit 0"
+    assert_contains "$out" "\"signing\"" "signing_minisign: JSON has signing subtree"
+    assert_contains "$out" "\"method\": \"minisign\"" "signing_minisign: method retained"
+}
+
+test_signing_subtree_ssh_requires_identity() {
+    local sb="$1"
+    _loader_missing_diagnostic || { _yci_test_report PASS "signing_ssh_missing_identity: skipped (loader absent)"; return 0; }
+    mkdir -p "$sb/real/profiles"
+    cat > "$sb/real/profiles/signing-ssh.yaml" <<'EOF'
+customer:
+  id: signing-ssh
+  display_name: "Signing SSH"
+engagement:
+  id: eng-001
+  type: implementation
+  sow_ref: SOW-1
+  scope_tags: [net]
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
+compliance:
+  regime: soc2
+  evidence_schema_version: 1
+  signing:
+    method: ssh-keygen-y-sign
+    key_ref: vault://ops/acme/ssh-signing
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: "Deliv"
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn
+EOF
+    local rc
+    "$LOADER" "$sb/real" signing-ssh >"$sb/out" 2>"$sb/err"; rc=$?
+    assert_exit 2 "$rc" "signing_ssh_missing_identity: exit 2"
+    assert_contains "$(cat "$sb/err")" "compliance.signing.identity" "signing_ssh_missing_identity: identity required"
+}
+
+test_signing_subtree_invalid_method() {
+    local sb="$1"
+    _loader_missing_diagnostic || { _yci_test_report PASS "signing_invalid_method: skipped (loader absent)"; return 0; }
+    mkdir -p "$sb/real/profiles"
+    cat > "$sb/real/profiles/signing-invalid.yaml" <<'EOF'
+customer:
+  id: signing-invalid
+  display_name: "Signing Invalid"
+engagement:
+  id: eng-001
+  type: implementation
+  sow_ref: SOW-1
+  scope_tags: [net]
+  start_date: "2026-01-01"
+  end_date: "2026-12-31"
+compliance:
+  regime: commercial
+  evidence_schema_version: 1
+  signing:
+    method: sigstore
+    key_ref: vault://ops/acme/sigstore
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: "Deliv"
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn
+EOF
+    local rc
+    "$LOADER" "$sb/real" signing-invalid >"$sb/out" 2>"$sb/err"; rc=$?
+    assert_exit 2 "$rc" "signing_invalid_method: exit 2"
+    assert_contains "$(cat "$sb/err")" "compliance.signing.method" "signing_invalid_method: method validation"
+}
+
+# ---------------------------------------------------------------------------
 # All valid enum round-trips: compliance.regime values
 # ---------------------------------------------------------------------------
 _mk_profile() {
@@ -586,6 +712,9 @@ main() {
     with_sandbox test_invalid_enum_scope_enforcement
     with_sandbox test_invalid_enum_handoff_format
     with_sandbox test_unknown_key_warning
+    with_sandbox test_signing_subtree_minisign
+    with_sandbox test_signing_subtree_ssh_requires_identity
+    with_sandbox test_signing_subtree_invalid_method
     with_sandbox test_enum_roundtrip_hipaa
     with_sandbox test_enum_roundtrip_pci
     with_sandbox test_enum_roundtrip_iso27001

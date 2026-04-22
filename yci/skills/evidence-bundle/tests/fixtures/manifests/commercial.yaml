@@ -1,0 +1,15 @@
+git:
+  commit_range: abc123..def456
+  diff_path: commercial.diff
+approvals:
+  - CAB-COM approved by ops@example.com
+pre_state:
+  - artifacts/pre-commercial.txt
+post_state:
+  - artifacts/post-commercial.txt
+operator_identity: ops@example.com
+tenant_scope:
+  - tenant-a
+timestamps:
+  generated_at: '2026-04-21T15:00:00Z'
+  executed_at: '2026-04-21T14:45:00Z'

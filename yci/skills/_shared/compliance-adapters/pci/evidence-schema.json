@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yci.example/compliance-adapters/pci/evidence-schema/1",
+  "title": "yci pci evidence bundle",
+  "description": "Required-field schema for evidence bundles produced under the PCI compliance regime. Version 1.",
+  "type": "object",
+  "required": [
+    "change_id",
+    "change_summary",
+    "pre_check_artifacts",
+    "post_check_artifacts",
+    "rollback_plan",
+    "approver",
+    "timestamp_utc",
+    "profile_commit",
+    "cde_boundary_attestation",
+    "pan_redaction_status",
+    "operator_identity"
+  ],
+  "properties": {
+    "change_id": { "type": "string" },
+    "change_summary": { "type": "string" },
+    "pre_check_artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "post_check_artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "rollback_plan": { "type": "string" },
+    "approver": { "type": "string" },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "profile_commit": { "type": "string" },
+    "cde_boundary_attestation": { "type": "string" },
+    "pan_redaction_status": {
+      "type": "string",
+      "enum": ["applied", "not-applicable"]
+    },
+    "operator_identity": { "type": "string" }
+  },
+  "additionalProperties": true
+}

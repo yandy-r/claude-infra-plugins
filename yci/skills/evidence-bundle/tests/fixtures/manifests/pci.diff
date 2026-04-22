@@ -1,0 +1,5 @@
+--- a/config
++++ b/config
+@@
+-allow cde-west
++allow cde-east

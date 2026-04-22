@@ -1,0 +1,14 @@
+schema_version: soc2/1
+change_id: soc2-001
+change_summary: SOC2 change summary
+customer_id: test
+profile_commit: abc123
+yci_commit: def456
+timestamp_utc: '2026-04-21T14:45:00Z'
+approver: ops@example.com
+compliance_regime: soc2
+rollback_plan_path: soc2.rollback.txt
+pre_check_artifacts: []
+post_check_artifacts: []
+blast_radius_label: medium
+rollback_confidence: high

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cat >/dev/null
+cat <<'EOF'
+-----BEGIN SSH SIGNATURE-----
+U1NIU0lHTkFUVVJFLURFVEVSTUlOSVNUSUMtRklYVFVSRQ==
+-----END SSH SIGNATURE-----
+EOF

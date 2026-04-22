@@ -1,0 +1,29 @@
+customer:
+  id: test
+  display_name: Test SOC2
+engagement:
+  id: eng-soc2
+  type: implementation
+  sow_ref: SOW-SOC2-1
+  scope_tags: [network]
+  start_date: '2026-01-01'
+  end_date: '2026-12-31'
+compliance:
+  regime: soc2
+  evidence_schema_version: 1
+  signing:
+    method: ssh-keygen-y-sign
+    key_ref: __KEY_REF__
+    identity: soc2-ops@example.com
+inventory:
+  adapter: manual
+approval:
+  adapter: manual
+deliverable:
+  format: [markdown]
+  header_template: local/header.md
+  handoff_format: git-repo
+safety:
+  default_posture: review
+  change_window_required: false
+  scope_enforcement: warn

@@ -139,14 +139,29 @@ yci_load_compliance_adapter() {
 
     adapter_dir="$(cd "$adapter_dir" && pwd -P)"
 
-    if ! _yci_in_array "$regime" "${YCI_ADAPTER_SCHEMA_EXEMPT[@]}"; then
-        local f
-        for f in "${YCI_ADAPTER_REQUIRED_FILES[@]}"; do
-            if [ ! -f "${adapter_dir}/${f}" ]; then
-                printf 'yci: adapter at %s is incomplete: missing %s\n' "$adapter_dir" "$f" >&2
-                return 4
-            fi
-        done
+    local f
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        if [ ! -f "${adapter_dir}/${f}" ]; then
+            printf 'yci: adapter at %s is incomplete: missing %s\n' "$adapter_dir" "$f" >&2
+            return 4
+        fi
+    done < <(yci_adapter_expected_files "$regime")
+
+    if yci_adapter_requires_evidence_schema "$regime"; then
+        if [ ! -f "${adapter_dir}/evidence-schema.json" ]; then
+            printf 'yci: adapter at %s is incomplete: missing evidence-schema.json\n' "$adapter_dir" >&2
+            return 4
+        fi
+    fi
+
+    if yci_adapter_requires_redaction_rules "$regime"; then
+        local first_rule=""
+        IFS= read -r first_rule < <(find "${adapter_dir}" -maxdepth 1 -type f -name '*-redaction.rules' -print -quit)
+        if [ -z "${first_rule}" ]; then
+            printf 'yci: adapter at %s is incomplete: missing *-redaction.rules\n' "$adapter_dir" >&2
+            return 4
+        fi
     fi
 
     local has_schema=0

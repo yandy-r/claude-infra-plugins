@@ -12,14 +12,13 @@
 # Contract summary (see CONTRIBUTING.md for the full prose):
 #
 #   - Every adapter ships ADAPTER.md (the single hard requirement).
-#   - Non-exempt adapters ALSO ship a *-redaction.rules file consumed by the
-#     telemetry-sanitizer (see yci/skills/_shared/telemetry-sanitizer/scripts/
-#     load_adapter_rules.py for the discovery glob and NAME:/RE: format).
-#   - Phase-1 baseline adapters (commercial, none) additionally ship
-#     evidence-template.md, handoff-checklist.md, and — for non-exempt regimes —
-#     evidence-schema.json. Pre-Phase-1 adapters (hipaa) ship only ADAPTER.md +
-#     their redaction rules; they are being retrofitted to the Phase-1 shape
-#     incrementally.
+#   - Every shipped adapter additionally ships evidence-template.md and
+#     handoff-checklist.md.
+#   - Non-exempt shipped adapters ALSO ship evidence-schema.json and at least one
+#     *-redaction.rules file consumed by the telemetry-sanitizer (see
+#     yci/skills/_shared/telemetry-sanitizer/scripts/load_adapter_rules.py for the
+#     discovery glob and NAME:/RE: format).
+#   - The only current schema/redaction-exempt regime is "none".
 
 # shellcheck disable=SC2034
 # The arrays below are read by callers after sourcing; shellcheck cannot see
@@ -30,19 +29,20 @@ YCI_ADAPTER_REQUIRED_FILES=(
   ADAPTER.md
 )
 
-# Files a Phase-1 baseline adapter additionally ships. Not enforced for all
-# adapters (hipaa predates this shape), but new adapters should follow it.
+# Files every fully shipped adapter additionally ships.
 YCI_ADAPTER_PHASE1_FILES=(
   evidence-template.md
   handoff-checklist.md
 )
 
-# Regimes that ship the Phase-1 baseline shape. Used by the validator to
-# apply stricter structural checks to these adapters only, so pre-Phase-1
-# adapters (e.g. hipaa) continue to validate as-is.
+# Regimes that ship the full adapter shape today. The variable name is kept for
+# validator compatibility, but it now represents all fully shipped adapters.
 YCI_ADAPTER_PHASE1_REGIMES=(
   commercial
   none
+  hipaa
+  pci
+  soc2
 )
 
 # Regimes that are exempt from evidence-schema.json. Exempt regimes are also
@@ -55,6 +55,10 @@ YCI_ADAPTER_SCHEMA_EXEMPT=(
 # Current evidence schema version shipped by the commercial adapter.
 # Bump when commercial/evidence-schema.json changes shape.
 YCI_ADAPTER_COMMERCIAL_SCHEMA_VERSION=1
+
+# Current evidence schema version for the regulated adapters shipped by issue
+# #34. Bump when any of those adapters' evidence-schema.json files change shape.
+YCI_ADAPTER_REGULATED_SCHEMA_VERSION=1
 
 # yci_adapter_is_schema_exempt <regime>
 #
@@ -89,10 +93,10 @@ yci_adapter_is_phase1() {
 # yci_adapter_expected_files <regime>
 #
 # Prints the list of files that adapter <regime> must ship, one per line.
-# Always includes YCI_ADAPTER_REQUIRED_FILES; Phase-1 regimes additionally
-# require YCI_ADAPTER_PHASE1_FILES. Schema-exempt regimes still get the
-# Phase-1 files if they are on the Phase-1 list (the exemption only applies
-# to evidence-schema.json, not to template/checklist).
+# Always includes YCI_ADAPTER_REQUIRED_FILES; shipped regimes additionally
+# require YCI_ADAPTER_PHASE1_FILES. Schema-exempt regimes still get the shipped
+# files if they are on the shipped list (the exemption only applies to
+# evidence-schema.json and *-redaction.rules, not to template/checklist).
 yci_adapter_expected_files() {
   local regime="${1:-}"
   local file
@@ -105,4 +109,26 @@ yci_adapter_expected_files() {
     done
   fi
   return 0
+}
+
+# yci_adapter_requires_redaction_rules <regime>
+#
+# Returns 0 when a regime must ship at least one *-redaction.rules file.
+yci_adapter_requires_redaction_rules() {
+  local regime="${1:-}"
+  if yci_adapter_is_schema_exempt "${regime}"; then
+    return 1
+  fi
+  yci_adapter_is_phase1 "${regime}"
+}
+
+# yci_adapter_requires_evidence_schema <regime>
+#
+# Returns 0 when a regime must ship evidence-schema.json.
+yci_adapter_requires_evidence_schema() {
+  local regime="${1:-}"
+  if yci_adapter_is_schema_exempt "${regime}"; then
+    return 1
+  fi
+  yci_adapter_is_phase1 "${regime}"
 }

@@ -500,6 +500,52 @@ test_output_routing() {
 }
 
 # ---------------------------------------------------------------------------
+# test_regulated_regime_keeps_commercial_stub_schema
+# ---------------------------------------------------------------------------
+
+test_regulated_regime_keeps_commercial_stub_schema() {
+    setup_tmp
+
+    local profile_json="${TMP_BASE}/profile-hipaa.json"
+    python3 - "${profile_json}" <<'PYEOF'
+import json
+import sys
+payload = {
+    "customer": {"id": "acme-health", "display_name": "Acme Health"},
+    "compliance": {"regime": "hipaa", "evidence_schema_version": 1, "baa_reference": "BAA-1"},
+}
+open(sys.argv[1], "w").write(json.dumps(payload))
+PYEOF
+
+    local change_json
+    change_json="$(make_change_json "${TMP_BASE}/change.json")"
+    local label_json
+    label_json="$(make_label_json high "${TMP_BASE}/label.json")"
+
+    local output yaml_body schema_version compliance_regime
+    output="$(
+        CLAUDE_PLUGIN_ROOT="${PLUGIN_ROOT}" \
+        "${RENDER}" \
+            --profile               "${profile_json}" \
+            --change                "${change_json}" \
+            --blast-radius-label    "${label_json}" \
+            --rollback-confidence   high \
+            --rollback-plan-path    rollback/plan.yaml \
+        2>/dev/null
+    )"
+    yaml_body="$(strip_yaml_fences "${output}" 2>/dev/null || true)"
+    schema_version="$(yaml_field "${yaml_body}" "schema_version" 2>/dev/null || true)"
+    compliance_regime="$(yaml_field "${yaml_body}" "compliance_regime" 2>/dev/null || true)"
+
+    assert_eq "${schema_version}" "commercial/1" \
+        "regulated-regime: schema_version stays commercial/1"
+    assert_eq "${compliance_regime}" "hipaa" \
+        "regulated-regime: compliance_regime reflects hipaa"
+
+    teardown_tmp
+}
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -510,6 +556,7 @@ main() {
     test_missing_required_flag
     test_invalid_json_input
     test_output_routing
+    test_regulated_regime_keeps_commercial_stub_schema
     yci_test_summary
 }
 

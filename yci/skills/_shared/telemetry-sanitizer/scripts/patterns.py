@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,7 +15,7 @@ class PatternSpec:
 
     name: str
     pattern: re.Pattern[str]
-    replacement: str
+    replacement: str | Callable[[re.Match[str]], str]
 
 
 def _c(pat: str, flags: int = 0) -> re.Pattern[str]:
@@ -139,6 +139,21 @@ def apply_pattern_list(text: str, patterns: Iterable[PatternSpec]) -> str:
     for spec in patterns:
         text = spec.pattern.sub(spec.replacement, text)
     return text
+
+
+def is_valid_luhn(candidate: str) -> bool:
+    digits = [int(ch) for ch in candidate if ch.isdigit()]
+    if not 13 <= len(digits) <= 19:
+        return False
+    checksum = 0
+    parity = len(digits) % 2
+    for idx, digit in enumerate(digits):
+        if idx % 2 == parity:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        checksum += digit
+    return checksum % 10 == 0
 
 
 def redact_generic_kv_secrets(text: str) -> str:

@@ -1,0 +1,14 @@
+schema_version: commercial/1
+change_id: pci-001
+change_summary: PCI change summary
+customer_id: test
+profile_commit: abc123
+yci_commit: def456
+timestamp_utc: '2026-04-21T14:45:00Z'
+approver: ops@example.com
+compliance_regime: pci
+rollback_plan_path: pci.rollback.txt
+pre_check_artifacts: []
+post_check_artifacts: []
+blast_radius_label: high
+rollback_confidence: high

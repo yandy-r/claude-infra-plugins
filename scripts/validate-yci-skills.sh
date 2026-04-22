@@ -1048,6 +1048,141 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# evidence-bundle skill checks
+# ---------------------------------------------------------------------------
+validate_evidence_bundle_skill() {
+    echo "--- evidence-bundle skill ---"
+
+    local skill_root="${REPO_ROOT}/yci/skills/evidence-bundle"
+    local tests_dir="${skill_root}/tests"
+
+    if [ ! -d "${skill_root}" ]; then
+        fail "yci/skills/evidence-bundle/ directory missing"
+        return
+    fi
+    ok "yci/skills/evidence-bundle/ present"
+
+    if [ -f "${skill_root}/SKILL.md" ]; then
+        ok "evidence-bundle/SKILL.md present"
+        if python3 - "${skill_root}/SKILL.md" <<'PY'; then
+import re
+import sys
+
+try:
+    import yaml
+except ImportError as exc:
+    sys.stderr.write(f"evidence-bundle/SKILL.md: yaml support unavailable: {exc}\n")
+    sys.exit(1)
+
+text = open(sys.argv[1], encoding="utf-8").read()
+m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+if not m:
+    sys.stderr.write("evidence-bundle/SKILL.md: missing YAML frontmatter\n")
+    sys.exit(1)
+
+fm = yaml.safe_load(m.group(1))
+if not isinstance(fm, dict):
+    sys.stderr.write("evidence-bundle/SKILL.md: frontmatter is not a mapping\n")
+    sys.exit(1)
+
+for key in ("name", "description", "allowed-tools"):
+    if key not in fm or not fm[key]:
+        sys.stderr.write(f"evidence-bundle/SKILL.md: missing or empty {key!r}\n")
+        sys.exit(1)
+PY
+            ok "evidence-bundle/SKILL.md frontmatter valid"
+        else
+            fail "evidence-bundle/SKILL.md frontmatter invalid"
+        fi
+    else
+        fail "evidence-bundle/SKILL.md missing"
+    fi
+
+    for ref in input-schema.md bundle-layout.md error-messages.md; do
+        if [ -s "${skill_root}/references/${ref}" ]; then
+            ok "reference ${ref} present and non-empty"
+        else
+            fail "reference ${ref} missing or empty"
+        fi
+    done
+
+    local s
+    for s in assemble-bundle.sh sign-bundle.sh validate-bundle.py render-bundle.py; do
+        local p="${skill_root}/scripts/${s}"
+        if [ -x "$p" ]; then
+            ok "script ${s} present and executable"
+        else
+            fail "script ${s}: missing or not executable"
+            continue
+        fi
+
+        if [[ "${s}" == *.sh ]]; then
+            if ! head -1 "$p" | grep -q '^#!/usr/bin/env bash'; then
+                fail "script ${s}: wrong shebang (expected #!/usr/bin/env bash)"
+                continue
+            fi
+            if head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+                ok "script ${s}: correct shebang and set -euo pipefail"
+            else
+                fail "script ${s}: missing 'set -euo pipefail'"
+            fi
+        fi
+    done
+
+    if [ -x "${tests_dir}/run-all.sh" ]; then
+        ok "tests/run-all.sh present and executable"
+    else
+        fail "tests/run-all.sh missing or not executable"
+    fi
+
+    for t in helpers.sh test_validate_bundle.sh test_sign_bundle.sh test_end_to_end.sh; do
+        if [ -s "${tests_dir}/${t}" ]; then
+            ok "test file ${t} present"
+        else
+            fail "test file ${t}: missing"
+        fi
+    done
+
+    for fx_dir in bin manifests profiles stubs; do
+        if [ -d "${tests_dir}/fixtures/${fx_dir}" ]; then
+            ok "tests/fixtures/${fx_dir}/ present"
+        else
+            fail "tests/fixtures/${fx_dir}/ missing"
+        fi
+    done
+
+    printf '\n--- shellcheck (evidence-bundle) ---\n'
+    if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
+        local sc_files=()
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(find "${skill_root}/scripts" -maxdepth 1 -type f -name '*.sh' | sort)
+        if [ "${#sc_files[@]}" -eq 0 ]; then
+            warn "shellcheck: no evidence-bundle shell scripts found"
+        elif "$SHELLCHECK_BIN" --severity=warning "${sc_files[@]}"; then
+            ok "shellcheck clean on evidence-bundle (${#sc_files[@]} files)"
+        else
+            fail "shellcheck reported warnings/errors (evidence-bundle)"
+        fi
+    else
+        warn "shellcheck not installed — skipping"
+    fi
+
+    printf '\n--- evidence-bundle test harness ---\n'
+    if bash "${tests_dir}/run-all.sh"; then
+        ok "evidence-bundle test harness passed"
+    else
+        fail "evidence-bundle test harness: one or more tests failed"
+    fi
+
+    local evidence_cmd="${REPO_ROOT}/yci/commands/evidence.md"
+    if [ -f "${evidence_cmd}" ] && grep -q 'yci:evidence-bundle' "${evidence_cmd}"; then
+        ok "commands/evidence.md references yci:evidence-bundle"
+    else
+        fail "commands/evidence.md missing or does not reference yci:evidence-bundle"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # compliance-adapters checks
 # ---------------------------------------------------------------------------
 validate_compliance_adapters() {
@@ -1353,6 +1488,8 @@ main() {
     validate_blast_radius_skill
     echo
     validate_network_change_review_skill
+    echo
+    validate_evidence_bundle_skill
     echo
     validate_telemetry_sanitizer_lib
     echo

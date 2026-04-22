@@ -3,15 +3,25 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+
+from patterns import is_valid_luhn
 
 
 @dataclass(frozen=True)
 class AdapterRule:
     name: str
     pattern: re.Pattern[str]
-    replacement: str
+    replacement: str | Callable[[re.Match[str]], str]
+
+
+def _pan_replacement(match: re.Match[str]) -> str:
+    candidate = match.group(0)
+    if is_valid_luhn(candidate):
+        return "[REDACTED_ADAPTER]"
+    return candidate
 
 
 def parse_rules_file(path: Path, *, default_name: str) -> list[AdapterRule]:
@@ -47,7 +57,7 @@ def parse_rules_file(path: Path, *, default_name: str) -> list[AdapterRule]:
                 AdapterRule(
                     name=name,
                     pattern=rx,
-                    replacement="[REDACTED_ADAPTER]",
+                    replacement=_pan_replacement if name == "pan_like" else "[REDACTED_ADAPTER]",
                 )
             )
             continue
@@ -74,5 +84,7 @@ def load_adapter_rules(paths: list[Path]) -> list[AdapterRule]:
     return all_rules
 
 
-def adapter_rules_to_specs(rules: list[AdapterRule]) -> list[tuple[str, re.Pattern[str], str]]:
+def adapter_rules_to_specs(
+    rules: list[AdapterRule],
+) -> list[tuple[str, re.Pattern[str], str | Callable[[re.Match[str]], str]]]:
     return [(r.name, r.pattern, r.replacement) for r in rules]

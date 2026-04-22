@@ -121,9 +121,8 @@ yci/skills/_shared/compliance-adapters/
 
 ### What Every Adapter Should Ship (design contract)
 
-Adapters live at two shapes — **Phase-1 baseline** (the target for new
-adapters) and **pre-Phase-1 minimal** (the shape `hipaa` ships today pending
-retrofit).
+Adapters now ship in one supported shape: the full evidence-bundle contract.
+Legacy minimal adapters are no longer a supported target shape.
 
 **Every adapter ships** — the single hard requirement:
 
@@ -140,7 +139,7 @@ retrofit).
 - Discovery is glob-based, so a regime may ship multiple rule files if it
   wants to group patterns by class.
 
-**Phase-1 baseline adapters** additionally ship:
+**Fully shipped adapters** additionally ship:
 
 - `evidence-schema.json` — required-field set for an evidence bundle under this
   regime (JSON Schema draft-07). Omitted only by schema-exempt regimes.
@@ -153,9 +152,6 @@ The `none` adapter is schema-exempt and redaction-exempt by design — it ships
 no `*-redaction.rules` and no `evidence-schema.json`. Its `evidence-template.md`
 and `handoff-checklist.md` are deliberately minimal.
 
-The `hipaa` adapter is pre-Phase-1: it ships `ADAPTER.md` + `phi-redaction.rules`
-only, and will be retrofitted to the Phase-1 shape in a later issue.
-
 #### Machine-readable contract
 
 The filesystem contract is mirrored in
@@ -163,9 +159,9 @@ The filesystem contract is mirrored in
 
 - `YCI_ADAPTER_REQUIRED_FILES=(ADAPTER.md)` — the single hard requirement.
 - `YCI_ADAPTER_PHASE1_FILES=(evidence-template.md handoff-checklist.md)` —
-  additional files required for regimes on the Phase-1 list.
-- `YCI_ADAPTER_PHASE1_REGIMES=(commercial none)` — the regimes that ship the
-  Phase-1 baseline shape. `hipaa` is deliberately absent until retrofit.
+  additional files required for regimes on the shipped-adapter list.
+- `YCI_ADAPTER_PHASE1_REGIMES=(commercial none hipaa pci soc2)` — the regimes
+  that currently ship the full adapter shape.
 - `YCI_ADAPTER_SCHEMA_EXEMPT=(none)` — exempt from `evidence-schema.json`.
   Exempt regimes are also allowed to ship no `*-redaction.rules` file.
 
@@ -211,6 +207,12 @@ message to the operator; substituting a default regime silently is a defect.
 - **`none`** — the schema- and redaction-exempt regime intended for internal,
   homelab, and non-production work; the `_internal` stock profile defaults here.
   See `yci/skills/_shared/compliance-adapters/none/ADAPTER.md`.
+- **`hipaa`** — healthcare evidence bundles with BAA-aware metadata and PHI
+  redaction. See `yci/skills/_shared/compliance-adapters/hipaa/ADAPTER.md`.
+- **`pci`** — PCI-DSS evidence bundles with PAN redaction and CDE boundary
+  attestation. See `yci/skills/_shared/compliance-adapters/pci/ADAPTER.md`.
+- **`soc2`** — SOC 2 evidence bundles with CC-series control mappings. See
+  `yci/skills/_shared/compliance-adapters/soc2/ADAPTER.md`.
 
 Both adapters land together as a single change (issue #30) so the baseline is
 non-ambiguous: either both are present or neither is.
@@ -230,18 +232,16 @@ non-ambiguous: either both are present or neither is.
    `hipaa/phi-redaction.rules` or `commercial/generic-redaction.rules` for
    reference).
 
-3. **For new adapters, default to the Phase-1 baseline shape** by adding the
+3. **For new adapters, default to the full shipped shape** by adding the
    regime to `YCI_ADAPTER_PHASE1_REGIMES` and populating
    `evidence-template.md`, `handoff-checklist.md`, and — if non-exempt —
-   `evidence-schema.json`. Pre-Phase-1 minimal adapters (like `hipaa`) are
-   permitted only as a legacy shape pending retrofit; do not add new adapters
-   in that shape.
+   `evidence-schema.json`.
 
 4. **Write `ADAPTER.md`** covering: regime name, intent, evidence schema
    reference (and version), redaction-rules reference, handoff-checklist
    reference, any regime-specific invariants, and the promises the adapter
    makes to callers. Use `commercial/ADAPTER.md` as the template — its
-   structure is the canonical Phase-1 model.
+   structure is the canonical shipped-adapter model.
 
 5. **If the regime needs a schema exemption**, add it to
    `YCI_ADAPTER_SCHEMA_EXEMPT` in

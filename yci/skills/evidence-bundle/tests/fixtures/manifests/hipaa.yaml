@@ -1,0 +1,15 @@
+git:
+  commit_range: abc123..def456
+  diff_path: hipaa.diff
+approvals:
+  - CAB-HIPAA approved by ops@example.com
+pre_state:
+  - artifacts/pre-hipaa.txt
+post_state:
+  - artifacts/post-hipaa.txt
+operator_identity: hipaa-ops@example.com
+tenant_scope:
+  - patient-records
+timestamps:
+  generated_at: '2026-04-21T15:00:00Z'
+  executed_at: '2026-04-21T14:45:00Z'

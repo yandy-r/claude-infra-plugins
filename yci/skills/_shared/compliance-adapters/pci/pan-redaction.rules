@@ -1,0 +1,11 @@
+# PCI redaction rules for cardholder-data evidence.
+# NAME:pan_like requires a Luhn post-filter in the sanitizer before redaction.
+
+NAME:pan_like
+RE:\b(?:\d[ -]*?){13,19}\b
+
+NAME:masked_pan
+RE:\b(?:\*{4}|X{4})[ -]*(?:\*{4}|X{4})[ -]*(?:\*{4}|X{4})[ -]*\d{4}\b
+
+NAME:cvv
+RE:(?i)\b(?:CVV|CVC)\s*[:#]?\s*\d{3,4}\b

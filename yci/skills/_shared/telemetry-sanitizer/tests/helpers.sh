@@ -10,6 +10,8 @@ YCI_TELEMETRY_SCRIPTS_DIR="$(cd "${_HELPERS_DIR}/../scripts" && pwd -P)"
 export YCI_TELEMETRY_SCRIPTS_DIR
 YCI_PLUGIN_ROOT="$(cd "${_HELPERS_DIR}/../../../.." && pwd -P)"
 export YCI_PLUGIN_ROOT
+CLAUDE_PLUGIN_ROOT="${YCI_PLUGIN_ROOT}"
+export CLAUDE_PLUGIN_ROOT
 
 _yci_test_report() {
     local status="$1" name="$2" detail="${3:-}"

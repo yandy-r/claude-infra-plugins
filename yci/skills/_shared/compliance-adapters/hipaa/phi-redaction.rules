@@ -6,3 +6,9 @@ RE:\b\d{3}-\d{2}-\d{4}\b
 
 NAME:mrn_like
 RE:\bMRN\s*[:#]?\s*\d{6,12}\b
+
+NAME:dob
+RE:\b(?:DOB|Date of Birth)\s*[:#]?\s*\d{4}-\d{2}-\d{2}\b
+
+NAME:patient_name
+RE:(?iu)\bPatient[ \t]*Name[ \t]*[:#]?[ \t]*(?:[^\W\d_]\.|[^\W\d_](?:[^\W\d_]|['’-]){0,31})(?:[ \t]+(?:[^\W\d_]\.|[^\W\d_](?:[^\W\d_]|['’-]){0,31})){0,3}(?:[ \t]+(?:jr|sr|ii|iii|iv)\.?)?\b

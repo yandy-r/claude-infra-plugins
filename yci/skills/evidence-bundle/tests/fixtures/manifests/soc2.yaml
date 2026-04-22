@@ -1,0 +1,20 @@
+git:
+  commit_range: abc123..def456
+  diff_path: soc2.diff
+approvals:
+  - CAB-SOC2 approved by ops@example.com
+pre_state:
+  - artifacts/pre-soc2.txt
+post_state:
+  - artifacts/post-soc2.txt
+operator_identity: soc2-ops@example.com
+tenant_scope:
+  - billing
+  - analytics
+timestamps:
+  generated_at: '2026-04-21T15:00:00Z'
+  executed_at: '2026-04-21T14:45:00Z'
+soc2:
+  control_mappings:
+    - CC6.1
+    - CC7.2

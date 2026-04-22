@@ -69,6 +69,24 @@ out_hipaa="$(python3 "${YCI_TELEMETRY_SCRIPTS_DIR}/sanitize_text.py" \
   "${TESTS_DIR}/fixtures/known-leak-corpus.txt")"
 assert_not_contains "$out_hipaa" "123-45-6789" "ssn_redacted_with_hipaa_adapter"
 
+printf '%s' '{"customer":{"id":"pci-customer"}}' > "$prof"
+sample_pan='primary account number 4111 1111 1111 1111'
+_preflight_sanitize_text "$prof"
+out_pci="$(printf '%s' "$sample_pan" | python3 "${YCI_TELEMETRY_SCRIPTS_DIR}/sanitize_text.py" \
+  --profile-json "$prof" \
+  --yci-root "$CLAUDE_PLUGIN_ROOT" \
+  --regime pci \
+  --mode strict)"
+assert_not_contains "$out_pci" "4111 1111 1111 1111" "pan_redacted_with_pci_adapter"
+sample_non_pan='tracking number 4111 1111 1111 1112'
+_preflight_sanitize_text "$prof"
+out_non_pan="$(printf '%s' "$sample_non_pan" | python3 "${YCI_TELEMETRY_SCRIPTS_DIR}/sanitize_text.py" \
+  --profile-json "$prof" \
+  --yci-root "$CLAUDE_PLUGIN_ROOT" \
+  --regime pci \
+  --mode strict)"
+assert_contains "$out_non_pan" "4111 1111 1111 1112" "non_luhn_pan_preserved"
+
 # internal mode: generic FQDN heuristic skipped — example.com should survive
 sample='see https://example.com/path for docs'
 _preflight_sanitize_text "$prof"
