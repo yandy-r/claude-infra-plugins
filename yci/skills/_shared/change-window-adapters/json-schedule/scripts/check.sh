@@ -54,7 +54,12 @@ while [ "$#" -gt 0 ]; do
         --warn-before-minutes=*)
             _WARN_BEFORE_MINUTES="${1#*=}"; shift ;;
         --)
-            shift; break ;;
+            shift
+            if [ "$#" -gt 0 ]; then
+                printf 'json-schedule adapter: unexpected argument: %s\n' "$1" >&2
+                exit 2
+            fi
+            break ;;
         -*)
             printf 'json-schedule adapter: unknown flag: %s\n' "$1" >&2; exit 2 ;;
         *)

@@ -147,7 +147,7 @@ Non-zero adapter exits are caught by `cwg_decide` in `window-decision.sh` and tr
 - **Message** (non-zero exit or empty stdout):
 
   ```text
-  cwg-adapter-error: <adapter-stderr-or-exit-code>
+  cwg-adapter-error: <adapter-stderr|empty stdout|exit code N>
   ```
 
   **Message** (malformed output):

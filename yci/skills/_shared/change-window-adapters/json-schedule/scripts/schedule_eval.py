@@ -16,6 +16,7 @@
 
 import argparse
 import json
+import os
 import sys
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -281,8 +282,6 @@ def main() -> None:
     ts = ts.replace(tzinfo=UTC) if ts.tzinfo is None else ts.astimezone(UTC)
 
     # Resolve absolute source path for consistent output.
-    import os
-
     abs_source = os.path.abspath(source_path)
 
     result = evaluate(ts, data["blackouts"], warn_before_minutes, file_tz, abs_source)

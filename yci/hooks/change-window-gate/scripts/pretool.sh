@@ -7,13 +7,15 @@
 #
 # Decision flow:
 #   1. Short-circuit allow on YCI_CWG_OVERRIDE=1.
-#   2. Classify the tool call via destructive-classifier.sh — allow reads/queries.
-#   3. Resolve data root + active customer.
-#      a. No active customer: allow init-class calls; block artifact creation
-#         (D7); block other destructive ops conservatively.
-#   4. Load customer profile JSON.
-#   5. Delegate window decision to window-decision.sh.
-#   6. Dispatch: allowed → exit 0; warning → stderr + exit 0;
+#   2. Resolve data root + active customer.
+#   3. No active customer: allow read-only calls silently, allow init-class
+#      calls with an advisory, block artifact creation (D7), block other
+#      destructive ops conservatively.
+#   4. Active customer: classify via destructive-classifier.sh — allow
+#      reads/queries.
+#   5. Load customer profile JSON.
+#   6. Delegate window decision to window-decision.sh.
+#   7. Dispatch: allowed → exit 0; warning → stderr + exit 0;
 #      blocked → deny JSON (or dry-run log + exit 0).
 #
 # Environment knobs:
@@ -49,17 +51,7 @@ tool_name="$(python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(
 tool_input="$(python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(json.dumps(d.get("tool_input",{})))' <<< "$payload")"
 
 # ---------------------------------------------------------------------------
-# 4. Classify destructive — if not destructive, allow (fail-open on reads)
-# ---------------------------------------------------------------------------
-
-# shellcheck source=./destructive-classifier.sh
-source "${SCRIPT_DIR}/destructive-classifier.sh"
-if ! cwg_is_destructive "$tool_name" "$tool_input"; then
-    exit 0
-fi
-
-# ---------------------------------------------------------------------------
-# 5. Resolve data root
+# 4. Resolve data root
 # ---------------------------------------------------------------------------
 
 # shellcheck source=../../../skills/_shared/scripts/resolve-data-root.sh
@@ -71,7 +63,7 @@ if [[ "$data_root_rc" -ne 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Resolve active customer (subprocess — resolve-customer.sh is standalone)
+# 5. Resolve active customer (subprocess — resolve-customer.sh is standalone)
 # ---------------------------------------------------------------------------
 
 RESOLVE="${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/resolve-customer.sh"
@@ -83,16 +75,28 @@ fi
 active_customer="$(printf '%s' "$active_customer" | tr -d '[:space:]')"
 
 # ---------------------------------------------------------------------------
-# 7. No active customer — purpose-classify and decide
+# 6. No active customer — purpose-classify and decide
 # ---------------------------------------------------------------------------
 
 if [[ -z "$active_customer" ]]; then
+    case "$tool_name" in
+        Read|Grep|Glob|WebFetch|WebSearch)
+            exit 0
+            ;;
+    esac
+
     # shellcheck source=./purpose-classifier.sh
     source "${SCRIPT_DIR}/purpose-classifier.sh"
 
     if cwg_is_init_path "$tool_name" "$tool_input"; then
         # Init path — allow with stderr advisory
         printf 'yci change-window-gate: no active profile; allowing init-class call (%s). Run /yci:switch <id> to establish a profile.\n' "$tool_name" >&2
+        exit 0
+    fi
+
+    # shellcheck source=./destructive-classifier.sh
+    source "${SCRIPT_DIR}/destructive-classifier.sh"
+    if ! cwg_is_destructive "$tool_name" "$tool_input"; then
         exit 0
     fi
 
@@ -107,6 +111,16 @@ if [[ -z "$active_customer" ]]; then
 
     # Default: destructive + no profile + not-init-not-artifact → block conservatively
     emit_deny "cwg-no-profile-destructive-write: destructive operation ($tool_name) requires an active customer profile; run /yci:switch <id> first"
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# 7. Active customer: classify destructive — allow reads/queries
+# ---------------------------------------------------------------------------
+
+# shellcheck source=./destructive-classifier.sh
+source "${SCRIPT_DIR}/destructive-classifier.sh"
+if ! cwg_is_destructive "$tool_name" "$tool_input"; then
     exit 0
 fi
 

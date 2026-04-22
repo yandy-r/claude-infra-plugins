@@ -62,7 +62,7 @@ def _unescape_value(value: str) -> str:
     value = re.sub(r"\\n", "\n", value)
     value = re.sub(r"\\,", ",", value)
     value = re.sub(r"\\;", ";", value)
-    value = re.sub(r"\\\\", "\\\\", value)  # \\ -> \ (keep last)
+    value = value.replace("\\\\", "\\")
     return value
 
 
@@ -224,7 +224,7 @@ def _expand_rrule(
         step = timedelta(days=1)
     elif freq == "WEEKLY":
         step = timedelta(weeks=1)
-    else:  # MONTHLY — approximate; calendar-accurate expansion deferred
+    else:  # MONTHLY — approximate 30-day step; acceptable within the 14-day lookahead window.
         step = timedelta(days=30)
 
     count_str = rrule.get("COUNT", "")

@@ -68,12 +68,12 @@ done
 # ---------------------------------------------------------------------------
 if [ -z "$_ts" ]; then
   printf 'ical adapter: --ts is required\n' >&2
-  exit 2
+  exit 1
 fi
 
 if [ -z "$_source" ]; then
   printf 'ical adapter: --source is required\n' >&2
-  exit 2
+  exit 1
 fi
 
 # ---------------------------------------------------------------------------

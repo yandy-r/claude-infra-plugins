@@ -47,7 +47,7 @@ runtime plus Codex advisory stub; Cursor / opencode parity deferred to Phase 1+.
 | 4.3 | hook entrypoint `pretool.sh`                                 | ✓ Done | Uses actual helper names from mirrors (`emit_deny`, subprocess invocations)              |
 | 5.1 | test harness (16 files, 147 assertions)                      | ✓ Done | All green                                                                                |
 | 6.1 | validator wiring                                             | ✓ Done | 3 new functions in `scripts/validate.sh`; added explicit test-harness invocation         |
-| 6.2 | docs (README, error catalog, gaps, Codex stub, CONTRIBUTING) | ✓ Done | All 7 `cwg-*` IDs cross-referenced with `pretool.sh`                                     |
+| 6.2 | docs (README, error catalog, gaps, Codex stub, CONTRIBUTING) | ✓ Done | All 7 catalogued `cwg-*` IDs reconciled across `pretool.sh` and `window-decision.sh`     |
 | 7.1 | final validate + report + commit                             | ✓ Done | This report                                                                              |
 
 ## Locked Decisions (D1–D7)

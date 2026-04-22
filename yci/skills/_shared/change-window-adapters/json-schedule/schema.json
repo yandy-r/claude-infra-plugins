@@ -17,13 +17,27 @@
         "properties": {
           "start": {
             "type": "string",
-            "format": "date-time",
-            "description": "ISO-8601 date-time string for when the blackout window begins. Prefer UTC (Z suffix) to avoid ambiguity."
+            "anyOf": [
+              {
+                "format": "date-time"
+              },
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+              }
+            ],
+            "description": "ISO-8601 date-time string for when the blackout window begins. Accepts timezone-aware timestamps or naive timestamps interpreted via the top-level timezone field."
           },
           "end": {
             "type": "string",
-            "format": "date-time",
-            "description": "ISO-8601 date-time string for when the blackout window ends (exclusive). Must be after start."
+            "anyOf": [
+              {
+                "format": "date-time"
+              },
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+              }
+            ],
+            "description": "ISO-8601 date-time string for when the blackout window ends (exclusive). Accepts timezone-aware timestamps or naive timestamps interpreted via the top-level timezone field. Must be after start."
           },
           "label": {
             "type": "string",

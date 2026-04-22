@@ -60,19 +60,17 @@ test_edit_to_artifacts_denied() {
 }
 
 # ---------------------------------------------------------------------------
-# Test: Bash with echo (read-only verb) redirecting to artifacts/ with no profile
-# → allow silently (echo is non-destructive; hook exits at step 4)
-# The artifact-creation deny only fires for destructive Bash operations.
+# Test: Bash redirect into artifacts/ with no profile → deny.
+# Redirects are treated as destructive, so the hook reaches the D7
+# artifact-creation block instead of allowing the command to pass through.
 # ---------------------------------------------------------------------------
-test_bash_readonly_redirect_artifacts_allows() {
+test_bash_redirect_artifacts_denied() {
     local sb="$1"
     local sandbox="${sb}/data"
     mkdir -p "${sandbox}/profiles" "${sandbox}/artifacts"
     export YCI_DATA_ROOT="$sandbox"
     unset YCI_CUSTOMER YCI_CWG_OVERRIDE YCI_CWG_DRY_RUN
 
-    # echo is in CWG_READONLY_VERBS, so the entire Bash call is non-destructive.
-    # The hook never reaches the D7 artifact-creation check.
     local cmd="echo hello >${sandbox}/artifacts/output.txt"
     local payload
     payload="$(python3 -c "import json,sys; print(json.dumps({'tool_name':'Bash','tool_input':{'command':sys.argv[1]}}))" "$cmd")"
@@ -80,8 +78,9 @@ test_bash_readonly_redirect_artifacts_allows() {
     local out rc=0
     out="$(printf '%s' "$payload" | bash "${YCI_CWG_SCRIPTS_DIR}/pretool.sh" 2>/dev/null)"; rc=$?
 
-    assert_exit 0 "$rc" "echo redirect artifacts: exit 0 (non-destructive allows)"
-    assert_eq "$out" "" "echo redirect artifacts: stdout empty (allow silently)"
+    assert_exit 0 "$rc" "echo redirect artifacts: exit 0 (deny as JSON)"
+    assert_contains "$out" '"permissionDecision": "deny"' "echo redirect artifacts: deny json"
+    assert_contains "$out" "cwg-no-profile-cannot-create" "echo redirect artifacts: rationale"
 
     teardown_test_sandbox "$sandbox"
 }
@@ -89,6 +88,6 @@ test_bash_readonly_redirect_artifacts_allows() {
 # ---------------------------------------------------------------------------
 with_sandbox test_write_to_artifacts_denied
 with_sandbox test_edit_to_artifacts_denied
-with_sandbox test_bash_readonly_redirect_artifacts_allows
+with_sandbox test_bash_redirect_artifacts_denied
 
 yci_test_summary

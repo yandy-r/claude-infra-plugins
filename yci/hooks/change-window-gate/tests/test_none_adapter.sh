@@ -54,9 +54,17 @@ test_none_with_source_blocked() {
 }
 
 # ---------------------------------------------------------------------------
+test_none_double_dash_rejects_trailing_args() {
+    local rc=0
+    "$NONE_CHECK" -- --unexpected >/dev/null 2>&1 || rc=$?
+    assert_exit 1 "$rc" "none -- trailing arg: exit 1"
+}
+
+# ---------------------------------------------------------------------------
 with_sandbox test_none_default_blocked
 with_sandbox test_none_override_allowed
 with_sandbox test_none_no_flags_blocked
 with_sandbox test_none_with_source_blocked
+with_sandbox test_none_double_dash_rejects_trailing_args
 
 yci_test_summary

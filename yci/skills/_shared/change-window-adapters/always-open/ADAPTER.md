@@ -33,7 +33,9 @@ but ignores all of them. Always emits:
 }
 ```
 
-Exit 0 unconditionally.
+`check.sh` exits 0 for normal operation, including known ignored flags. Unknown or invalid flags
+exit non-zero (`1`), so operators should still check the exit status when troubleshooting adapter
+invocation failures.
 
 ## Security note
 

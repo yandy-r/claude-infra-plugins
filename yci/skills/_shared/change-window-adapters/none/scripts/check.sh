@@ -25,7 +25,12 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     --)
-      shift; break
+      shift
+      if [ "$#" -gt 0 ]; then
+        printf 'none adapter: unexpected argument: %s\n' "$1" >&2
+        exit 1
+      fi
+      break
       ;;
     -*)
       printf 'none adapter: unknown flag: %s\n' "$1" >&2

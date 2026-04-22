@@ -43,6 +43,12 @@ else
     _yci_test_report PASS "classify: find is read-only"
 fi
 
+if cwg_classify_bash_command "echo hello >/tmp/output.txt"; then
+    _yci_test_report PASS "classify: echo redirect is destructive"
+else
+    _yci_test_report FAIL "classify: echo redirect is destructive" "expected destructive"
+fi
+
 # Destructive verbs — must return destructive (0)
 if cwg_classify_bash_command "rm -rf /tmp/x"; then
     _yci_test_report PASS "classify: rm is destructive"
@@ -60,6 +66,24 @@ if cwg_classify_bash_command "dd if=/dev/zero of=/tmp/x"; then
     _yci_test_report PASS "classify: dd is destructive"
 else
     _yci_test_report FAIL "classify: dd is destructive" "expected destructive"
+fi
+
+if cwg_classify_bash_command "mkdir -p /tmp/x"; then
+    _yci_test_report PASS "classify: mkdir is destructive"
+else
+    _yci_test_report FAIL "classify: mkdir is destructive" "expected destructive"
+fi
+
+if cwg_classify_bash_command "tee /tmp/output.txt"; then
+    _yci_test_report PASS "classify: tee is destructive"
+else
+    _yci_test_report FAIL "classify: tee is destructive" "expected destructive"
+fi
+
+if cwg_classify_bash_command "bash -lc 'rm -rf /tmp/x'"; then
+    _yci_test_report PASS "classify: bash -lc trampoline is destructive"
+else
+    _yci_test_report FAIL "classify: bash -lc trampoline is destructive" "expected destructive"
 fi
 
 # Multi-token destructive patterns

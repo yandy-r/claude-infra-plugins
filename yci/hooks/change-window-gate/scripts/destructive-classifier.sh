@@ -18,9 +18,10 @@
 #     Used internally by cwg_is_destructive and directly by tests.
 #
 # LIMITATIONS:
-#   - The classifier operates on the TOP-LEVEL command only.  Sub-shell /
-#     eval / subprocess chains (e.g. `sh -c "rm -rf /"`) are NOT recursively
-#     classified.  Deeper static analysis belongs in a different tool.
+#   - The classifier operates on the TOP-LEVEL command only.  Known shell
+#     trampolines (for example `sh -c`, `bash -lc`, `env`, `sudo`, `xargs`)
+#     fail closed, but deeper static analysis of the nested command is out of
+#     scope here.
 #   - Tokenisation uses Python's shlex, which handles POSIX quoting but does
 #     not expand variables or aliases.  Commands that obscure their verb via
 #     variable indirection (CMD=rm; $CMD -rf /) will NOT be caught.
@@ -30,7 +31,7 @@
 # ---------------------------------------------------------------------------
 
 # First tokens that are always destructive regardless of sub-arguments.
-CWG_DESTRUCTIVE_BASH_VERBS=(rm mv dd mkfs shutdown reboot)
+CWG_DESTRUCTIVE_BASH_VERBS=(rm mv dd mkfs shutdown reboot mkdir tee env sudo xargs)
 
 # First tokens that are always read-only — short-circuit before sub-invocation
 # matching to suppress false positives.
@@ -162,7 +163,30 @@ cwg_classify_bash_command() {
     local t1="${tokens[1]:-}"
     local t2="${tokens[2]:-}"
 
-    # --- 1. First-token: readonly verbs ----------------------------------------
+    # --- 1. Fail closed on shell redirections / pipelines / trampolines -------
+    local tok
+    for tok in "${tokens[@]}"; do
+        case "$tok" in
+            '>'|'>>'|'>>>'|'<'|'<<'|'<<<'|'<>'|'>&'|'&>'|'1>'|'1>>'|'2>'|'2>>'|'|'|'|&'|'||'|'&&'|';'|'&')
+                return 0
+                ;;
+        esac
+        if [[ "$tok" == '>'* || "$tok" == '<'* || "$tok" == '1>'* || "$tok" == '2>'* || "$tok" == '&>'* || "$tok" == '>&'* ]]; then
+            return 0
+        fi
+    done
+
+    case "$t0" in
+        bash|sh)
+            case "$t1" in
+                -c|-lc)
+                    return 0
+                    ;;
+            esac
+            ;;
+    esac
+
+    # --- 2. First-token: readonly verbs ----------------------------------------
     local rv
     for rv in "${CWG_READONLY_VERBS[@]}"; do
         if [[ "$t0" == "$rv" ]]; then
@@ -170,7 +194,7 @@ cwg_classify_bash_command() {
         fi
     done
 
-    # --- 2. First-token: destructive verbs -------------------------------------
+    # --- 3. First-token: destructive verbs -------------------------------------
     local dv
     for dv in "${CWG_DESTRUCTIVE_BASH_VERBS[@]}"; do
         if [[ "$t0" == "$dv" ]]; then
@@ -182,7 +206,7 @@ cwg_classify_bash_command() {
     local first_two="$t0 $t1"
     local first_three="$t0 $t1 $t2"
 
-    # --- 3. Read-only sub-invocations (check BEFORE destructive to let
+    # --- 4. Read-only sub-invocations (check BEFORE destructive to let
     #        e.g. "git status" short-circuit before "git push" patterns) --------
     local ro
     for ro in "${CWG_READONLY_SUBINVOCATIONS[@]}"; do
@@ -204,7 +228,7 @@ cwg_classify_bash_command() {
         fi
     done
 
-    # --- 4. Destructive sub-invocations ----------------------------------------
+    # --- 5. Destructive sub-invocations ----------------------------------------
     local ds
     for ds in "${CWG_DESTRUCTIVE_SUBINVOCATIONS[@]}"; do
         local ds_words
@@ -224,7 +248,7 @@ cwg_classify_bash_command() {
         fi
     done
 
-    # --- 5. Default: non-destructive -------------------------------------------
+    # --- 6. Default: non-destructive -------------------------------------------
     # Bash covers an enormous command surface.  Opt-in destructive list is safer
     # than opt-out.  Unknown exotic commands ride through; exotic Write/Edit
     # calls are handled by the tool-name layer above.

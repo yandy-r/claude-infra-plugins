@@ -93,11 +93,19 @@ test_ical_tzid_outside() {
 }
 
 # ---------------------------------------------------------------------------
+test_ical_missing_ts_is_usage_error() {
+    local rc=0
+    "$ICAL_CHECK" --source "$BLOCKED_FIXTURE" >/dev/null 2>&1 || rc=$?
+    assert_exit 1 "$rc" "ical missing ts: exit 1"
+}
+
+# ---------------------------------------------------------------------------
 with_sandbox test_ical_ts_blocked
 with_sandbox test_ical_ts_warning
 with_sandbox test_ical_ts_allowed
 with_sandbox test_ical_malformed
 with_sandbox test_ical_tzid_boundary
 with_sandbox test_ical_tzid_outside
+with_sandbox test_ical_missing_ts_is_usage_error
 
 yci_test_summary

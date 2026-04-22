@@ -81,11 +81,19 @@ test_json_missing_source() {
 }
 
 # ---------------------------------------------------------------------------
+test_json_double_dash_rejects_trailing_args() {
+    local rc=0
+    "$JSON_CHECK" --ts "2026-04-22T12:00:00Z" --source "$BLOCKED_FIXTURE" -- trailing >/dev/null 2>&1 || rc=$?
+    assert_exit 2 "$rc" "json -- trailing arg: exit 2"
+}
+
+# ---------------------------------------------------------------------------
 with_sandbox test_json_ts_blocked
 with_sandbox test_json_ts_warning
 with_sandbox test_json_ts_allowed
 with_sandbox test_json_malformed
 with_sandbox test_json_missing_blackouts
 with_sandbox test_json_missing_source
+with_sandbox test_json_double_dash_rejects_trailing_args
 
 yci_test_summary

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# D7: no active profile + init path → exit 0 + stderr advisory (for destructive init-class).
-# Non-destructive tools (Read, Bash ls, npm install) allow silently at step 4.
+# D7: no active profile + init path → exit 0 + stderr advisory.
+# Read-only tools still allow silently; init-class package-manager commands and
+# writes to profiles/ produce the documented advisory.
 # shellcheck disable=SC1091
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
@@ -73,11 +74,11 @@ test_edit_profiles_allowed() {
 }
 
 # ---------------------------------------------------------------------------
-# Test: Bash npm install with no profile → allow silently (non-destructive short-circuit)
-# npm install is classified as non-destructive by cwg_classify_bash_command,
-# so the hook exits at step 4 (exit 0, no advisory, no deny).
+# Test: Bash npm install with no profile → allow + stderr advisory.
+# Package-manager commands are init-class when no profile is active, so they
+# should produce the same advisory path as profile scaffolding.
 # ---------------------------------------------------------------------------
-test_bash_npm_install_allowed_silently() {
+test_bash_npm_install_allowed_with_advisory() {
     local sb="$1"
     local sandbox="${sb}/data"
     mkdir -p "${sandbox}/profiles"
@@ -86,11 +87,20 @@ test_bash_npm_install_allowed_silently() {
 
     local payload='{"tool_name":"Bash","tool_input":{"command":"npm install"}}'
 
-    local out rc=0
-    out="$(printf '%s' "$payload" | bash "${YCI_CWG_SCRIPTS_DIR}/pretool.sh" 2>/dev/null)"; rc=$?
+    local out_file err_file rc=0
+    out_file="$(mktemp)"
+    err_file="$(mktemp)"
+    printf '%s' "$payload" | bash "${YCI_CWG_SCRIPTS_DIR}/pretool.sh" \
+        >"$out_file" 2>"$err_file" || rc=$?
+
+    local out err
+    out="$(< "$out_file")"
+    err="$(< "$err_file")"
+    rm -f "$out_file" "$err_file"
 
     assert_exit 0 "$rc" "npm install no profile: exit 0"
-    assert_eq "$out" "" "npm install no profile: stdout empty (allow silently)"
+    assert_eq "$out" "" "npm install no profile: stdout empty (allow)"
+    assert_contains "$err" "allowing init-class" "npm install no profile: stderr advisory"
 
     teardown_test_sandbox "$sandbox"
 }
@@ -119,7 +129,7 @@ test_read_no_profile_allowed() {
 # ---------------------------------------------------------------------------
 with_sandbox test_write_to_profiles_allowed
 with_sandbox test_edit_profiles_allowed
-with_sandbox test_bash_npm_install_allowed_silently
+with_sandbox test_bash_npm_install_allowed_with_advisory
 with_sandbox test_read_no_profile_allowed
 
 yci_test_summary

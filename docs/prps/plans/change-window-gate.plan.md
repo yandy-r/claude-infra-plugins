@@ -117,7 +117,7 @@ annotation — they run in the parent worktree.
 - `yci/hooks/change-window-gate/targets/codex/codex-config-fragment.toml`
 - `yci/hooks/change-window-gate/tests/run-all.sh`
 - `yci/hooks/change-window-gate/tests/helpers.sh`
-- `yci/hooks/change-window-gate/tests/test_*.sh` (11 test files enumerated in 5.1)
+- `yci/hooks/change-window-gate/tests/test_*.sh` (16 test files enumerated in 5.1)
 - `yci/hooks/change-window-gate/tests/fixtures/{blocked,open,warning}.ics`
 - `yci/hooks/change-window-gate/tests/fixtures/blackout.schedule.json`
 - `yci/hooks/change-window-gate/tests/fixtures/profile-{ical,json,always-open,none,no-profile}.yaml`
@@ -440,14 +440,15 @@ batches run in order.
   - `test_always_open_adapter.sh` — always allowed.
   - `test_none_adapter.sh` — default blocked; `YCI_CWG_OVERRIDE=1` → allowed.
   - `test_window_decision.sh` — orchestrator stubs.
-  - `test_dispatcher_missing_adapter.sh` — profile references `servicenow-cab` → loader exit 2 →
-    hook `blocked` with `cwg-adapter-load-failed`.
+  - `test_dispatcher.sh` — dispatcher resolution, deferred adapters, `--adapter`, `--export`.
   - `test_hook_fails_open_on_read_tools.sh` — Read/Grep/Glob/WebFetch/Bash "ls" → allow regardless
     of window.
-  - `test_hook_allows_init_when_no_profile.sh` (D7) — resolver refusal + path under
+  - `test_hook_defers_and_allows_init.sh` (D7) — resolver refusal + path under
     `$YCI_DATA_ROOT/profiles/` → allow with stderr advisory.
-  - `test_hook_blocks_creation_when_no_profile.sh` (D7) — resolver refusal + path under
+  - `test_hook_blocks_creation_without_profile.sh` (D7) — resolver refusal + path under
     `$YCI_DATA_ROOT/artifacts/` → deny with `cwg-no-profile-cannot-create`.
+  - `test_hook_blocks_other_destructive_without_profile.sh` (D7) — destructive non-init,
+    non-artifact calls without an active profile → conservative deny.
   - `test_hook_blocks_destructive_in_blackout.sh` — e2e: ical adapter + `.ics` covers "now" +
     `Bash rm -rf …` → deny.
   - `test_hook_warning_allows_with_banner.sh` — e2e: adapter returns warning → exit 0 + stderr
@@ -600,7 +601,7 @@ bash yci/hooks/change-window-gate/tests/run-all.sh --verbose  # from B5 onward
       JSON.
 - [ ] Codex target stub present.
 - [ ] capability-gaps.md documents per-target verdicts.
-- [ ] All 14 test files under `yci/hooks/change-window-gate/tests/` green.
+- [ ] All 16 test files under `yci/hooks/change-window-gate/tests/` green.
 - [ ] `./scripts/validate.sh` green.
 - [ ] `yci/CONTRIBUTING.md` documents the change-window adapter contract.
 - [ ] D7 behavior implemented in `purpose-classifier.sh` + `pretool.sh` + tested.

@@ -164,6 +164,8 @@ print("ok")
     local err_summary
     if [[ -n "$adapter_stderr" ]]; then
         err_summary="$adapter_stderr"
+    elif [[ "$adapter_rc" -eq 0 ]] && [[ -z "$adapter_stdout" ]]; then
+        err_summary="empty stdout"
     else
         err_summary="exit code ${adapter_rc}"
     fi
