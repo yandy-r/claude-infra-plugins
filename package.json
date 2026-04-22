@@ -4,16 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "./scripts/style.sh lint",
-    "lint:modified": "./scripts/style.sh lint --modified",
-    "lint:staged": "./scripts/style.sh lint --staged",
-    "lint:unstaged": "./scripts/style.sh lint --unstaged",
-    "lint:fix": "./scripts/style.sh lint --fix",
-    "lint:fix:modified": "./scripts/style.sh lint --fix --modified",
-    "format": "./scripts/style.sh format",
-    "format:modified": "./scripts/style.sh format --modified",
-    "format:staged": "./scripts/style.sh format --staged",
-    "format:unstaged": "./scripts/style.sh format --unstaged"
+    "lint": "./scripts/style.sh lint --python --docs --shell",
+    "lint:modified": "./scripts/style.sh lint --modified --python --docs --shell",
+    "lint:staged": "./scripts/style.sh lint --staged --python --docs --shell",
+    "lint:unstaged": "./scripts/style.sh lint --unstaged --python --docs --shell",
+    "lint:fix": "./scripts/style.sh lint --fix --python --docs --shell",
+    "lint:fix:modified": "./scripts/style.sh lint --fix --modified --python --docs --shell",
+    "format": "./scripts/style.sh format --python --docs",
+    "format:modified": "./scripts/style.sh format --modified --python --docs",
+    "format:staged": "./scripts/style.sh format --staged --python --docs",
+    "format:unstaged": "./scripts/style.sh format --unstaged --python --docs"
   },
   "devDependencies": {
     "markdownlint-cli": "^0.42.0",
