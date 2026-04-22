@@ -1,0 +1,30 @@
+# Advisory only — Codex hooks under development; see capability-gaps.md for status.
+#
+# This file is a reservation marker: when Codex's `features.codex_hooks` GAs
+# (per the ycc target-capability-matrix, this is currently `unsupported`), this
+# fragment will be promoted to a real TOML config snippet wiring
+# `pretool.sh` to the PreToolUse-equivalent event.
+#
+# yci refuses to fabricate config for an unsupported target.
+#
+# What the Claude-side hook does (for Codex operator awareness):
+#   - Runs after customer-guard on every tool invocation (PreToolUse, matcher "*").
+#   - Short-circuits allow when YCI_CWG_OVERRIDE=1 is set.
+#   - Classifies the call as destructive or read-only via destructive-classifier.sh.
+#     Read-only calls (Read, Grep, Glob, WebFetch, non-destructive Bash) pass through.
+#   - Resolves the active customer profile; if none is found, applies D7 purpose
+#     classification (allow init paths, block artifact creation and other destructive
+#     writes).
+#   - Loads the profile's change_window.adapter (ical, json-schedule, always-open,
+#     or none) via load-change-window-adapter.sh and invokes check.sh --ts --source
+#     --timezone.
+#   - Dispatches on the adapter decision: allowed -> exit 0; warning -> stderr banner
+#     + exit 0; blocked -> emit deny JSON (or audit-log entry + exit 0 in dry-run).
+#   - Emits structured deny JSON with cwg-* error IDs; see references/error-messages.md.
+#
+# Until Codex exposes a PreToolUse hook equivalent, Codex operators should:
+#   1. Use /yci:review as a pre-flight check before applying changes.
+#   2. Manually verify change-window status via the adapter's check.sh before
+#      running destructive operations in a Codex session.
+#   3. Refer to the active customer profile's change_window block for the enforced
+#      schedule.
