@@ -1,0 +1,10 @@
+diff --git a/configs/dc1-edge-01/interfaces.conf b/configs/dc1-edge-01/interfaces.conf
+index 1111111..2222222 100644
+--- a/configs/dc1-edge-01/interfaces.conf
++++ b/configs/dc1-edge-01/interfaces.conf
+@@ -1,4 +1,4 @@
+ interface GigabitEthernet0/0
+-  mtu 1500
++  mtu 9000
+   description uplink-to-spine
+   no shutdown

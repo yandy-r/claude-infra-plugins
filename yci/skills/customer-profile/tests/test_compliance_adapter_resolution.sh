@@ -8,7 +8,8 @@
 # shellcheck disable=SC1091
 set -uo pipefail  # no -e: tests handle their own failures to report all cases
 
-source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "${SCRIPT_DIR}/helpers.sh"
 
 LOADER="${YCI_SCRIPTS_DIR}/load-profile.sh"
 ADAPTER_LOADER="${YCI_SHARED_DIR}/load-compliance-adapter.sh"
@@ -16,7 +17,7 @@ ADAPTER_LOADER="${YCI_SHARED_DIR}/load-compliance-adapter.sh"
 # Resolve the yci plugin root (parent of skills/) from helpers' known path.
 # YCI_SHARED_DIR = <yci>/skills/_shared/scripts — walk up three levels.
 _YCI_ROOT="$(cd "${YCI_SHARED_DIR}/../../.." && pwd -P)"
-_FIXTURES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/fixtures" && pwd -P)"
+_FIXTURES_DIR="${SCRIPT_DIR}/fixtures"
 _INTERNAL_YAML="${_YCI_ROOT}/docs/profiles/_internal.yaml.example"
 _COMMERCIAL_FIXTURE="${_FIXTURES_DIR}/commercial-example.yaml"
 
@@ -280,6 +281,25 @@ test_unknown_regime_exits_2() {
 }
 
 # ---------------------------------------------------------------------------
+# Case 6 — empty --export-file= value → exit 1 + stderr phrase
+# ---------------------------------------------------------------------------
+test_empty_export_file_equals_rejected() {
+    local sb="$1"
+
+    if ! _adapter_loader_present; then
+        _yci_test_report SKIP "empty_export_file (adapter loader absent)"; return 0
+    fi
+
+    local combined_output adapter_rc
+    combined_output="$("$ADAPTER_LOADER" --export-file= --regime none 2>&1)"
+    adapter_rc=$?
+
+    assert_exit 1 "$adapter_rc" "empty_export_file: exit code is 1"
+    assert_contains "$combined_output" "--export-file requires a value" \
+        "empty_export_file: stderr contains missing value message"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -291,6 +311,7 @@ main() {
     with_sandbox test_pci_resolves_pci
     with_sandbox test_soc2_resolves_soc2
     with_sandbox test_unknown_regime_exits_2
+    with_sandbox test_empty_export_file_equals_rejected
 
     yci_test_summary
 }

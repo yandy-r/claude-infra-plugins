@@ -1,0 +1,8 @@
+# vendor: iosxe
+# summary: Raise MTU on dc1-edge-01 uplink
+# change_id: IOSXE-CR-001
+# target: device=dc1-edge-01
+interface GigabitEthernet0/0
+ mtu 9000
+ description uplink-to-spine
+!

@@ -1,0 +1,5 @@
+# vendor: panos
+# summary: Raise MTU on ethernet1/1
+# change_id: PANOS-CR-001
+# target: device=dc1-edge-01
+set network interface ethernet ethernet1/1 layer3 mtu 9000

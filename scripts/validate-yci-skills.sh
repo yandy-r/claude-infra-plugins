@@ -1183,6 +1183,121 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# mop skill checks
+# ---------------------------------------------------------------------------
+validate_mop_skill() {
+    echo "--- mop skill ---"
+
+    local skill_root="${REPO_ROOT}/yci/skills/mop"
+    local tests_dir="${skill_root}/tests"
+
+    if [ ! -d "${skill_root}" ]; then
+        fail "yci/skills/mop/ directory missing"
+        return
+    fi
+    ok "yci/skills/mop/ present"
+
+    if [ -f "${skill_root}/SKILL.md" ]; then
+        ok "mop/SKILL.md present"
+        if python3 - "${skill_root}/SKILL.md" <<'PY'; then
+import re
+import sys
+import yaml
+
+text = open(sys.argv[1], encoding="utf-8").read()
+m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
+if not m:
+    sys.stderr.write("mop/SKILL.md: missing YAML frontmatter\n")
+    sys.exit(1)
+fm = yaml.safe_load(m.group(1))
+if not isinstance(fm, dict):
+    sys.stderr.write("mop/SKILL.md: frontmatter is not a mapping\n")
+    sys.exit(1)
+for key in ("name", "description", "allowed-tools"):
+    if key not in fm or not fm[key]:
+        sys.stderr.write(f"mop/SKILL.md: missing or empty {key}\n")
+        sys.exit(1)
+if fm.get("name") != "mop":
+    sys.stderr.write("mop/SKILL.md: name must be 'mop'\n")
+    sys.exit(1)
+PY
+            ok "mop/SKILL.md frontmatter valid"
+        else
+            fail "mop/SKILL.md frontmatter invalid"
+        fi
+    else
+        fail "mop/SKILL.md missing"
+    fi
+
+    for ref in artifact-template.md change-input-schema.md error-messages.md; do
+        if [ -s "${skill_root}/references/${ref}" ]; then
+            ok "reference ${ref} present and non-empty"
+        else
+            fail "reference ${ref} missing or empty"
+        fi
+    done
+
+    for s in generate-mop.sh normalize-change.sh render-artifact.sh; do
+        local p="${skill_root}/scripts/${s}"
+        if [ ! -x "$p" ]; then
+            fail "script ${s}: missing or not executable"
+            continue
+        fi
+        if ! head -1 "$p" | grep -q '^#!/usr/bin/env bash'; then
+            fail "script ${s}: wrong shebang"
+            continue
+        fi
+        if ! head -20 "$p" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+            fail "script ${s}: missing 'set -euo pipefail' in first 20 lines"
+        else
+            ok "script ${s}: executable, shebang, set -euo pipefail"
+        fi
+    done
+
+    local shared_rollback="${REPO_ROOT}/yci/skills/_shared/scripts/derive-change-rollback.sh"
+    if [ -x "$shared_rollback" ]; then
+        ok "shared derive-change-rollback.sh present and executable"
+    else
+        fail "shared derive-change-rollback.sh missing or not executable"
+    fi
+
+    if [ -f "${REPO_ROOT}/yci/commands/mop.md" ] && grep -q 'yci:mop' "${REPO_ROOT}/yci/commands/mop.md"; then
+        ok "commands/mop.md references yci:mop"
+    else
+        fail "commands/mop.md missing or does not reference yci:mop"
+    fi
+
+    if [ -x "${tests_dir}/run-all.sh" ]; then
+        ok "mop tests/run-all.sh present and executable"
+    else
+        fail "mop tests/run-all.sh missing or not executable"
+    fi
+
+    for t in helpers.sh test_normalize_change.sh test_shared_rollback.sh test_render_artifact.sh test_end_to_end.sh; do
+        if [ -s "${tests_dir}/${t}" ]; then
+            ok "test file ${t} present"
+        else
+            fail "test file ${t}: missing"
+        fi
+    done
+
+    for fx_dir in changes profiles; do
+        if [ -d "${tests_dir}/fixtures/${fx_dir}" ]; then
+            ok "tests/fixtures/${fx_dir}/ present"
+        else
+            fail "tests/fixtures/${fx_dir}/ missing"
+        fi
+    done
+
+    printf '\n--- mop test harness ---\n'
+    if bash "${tests_dir}/run-all.sh"; then
+        ok "mop test harness passed"
+    else
+        fail "mop test harness: one or more tests failed"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # compliance-adapters checks
 # ---------------------------------------------------------------------------
 validate_compliance_adapters() {
@@ -1490,6 +1605,8 @@ main() {
     validate_network_change_review_skill
     echo
     validate_evidence_bundle_skill
+    echo
+    validate_mop_skill
     echo
     validate_telemetry_sanitizer_lib
     echo

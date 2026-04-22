@@ -2,10 +2,11 @@
 # yci — resolve a customer profile's compliance.regime to the matching adapter
 # directory on disk. Source to expose yci_load_compliance_adapter(), or run directly.
 #
-# Usage: load-compliance-adapter.sh [--export] [--profile-json-path PATH | --regime REGIME]
+# Usage: load-compliance-adapter.sh [--export | --export-file PATH] [--profile-json-path PATH | --regime REGIME]
 #   --profile-json-path PATH  Read profile JSON from file (mutually exclusive with --regime).
 #   --regime REGIME           Use this regime directly (bypasses JSON parsing).
-#   --export                  Emit YCI_ADAPTER_DIR / YCI_ADAPTER_REGIME / YCI_ADAPTER_HAS_SCHEMA.
+#   --export                  Emit shell-safe export lines for YCI_ADAPTER_* variables.
+#   --export-file PATH        Write shell-safe export lines to PATH for later sourcing.
 #   Default input: stdin (profile JSON).
 #
 # Exit codes: 0 success | 1 usage error | 2 unknown/empty regime | 3 dir missing | 4 incomplete
@@ -64,6 +65,7 @@ _yci_in_array() {
 # ---------------------------------------------------------------------------
 yci_load_compliance_adapter() {
     local do_export=0
+    local export_file_path=""
     local profile_json_path=""
     local regime_direct=""
 
@@ -71,6 +73,12 @@ yci_load_compliance_adapter() {
         case "$1" in
             --export)
                 do_export=1; shift ;;
+            --export-file)
+                [ -z "${2:-}" ] && { printf 'yci: --export-file requires a value\n' >&2; return 1; }
+                export_file_path="$2"; shift 2 ;;
+            --export-file=*)
+                [ -z "${1#*=}" ] && { printf 'yci: --export-file requires a value\n' >&2; return 1; }
+                export_file_path="${1#*=}"; shift ;;
             --profile-json-path)
                 [ -z "${2:-}" ] && { printf 'yci: --profile-json-path requires a value\n' >&2; return 1; }
                 profile_json_path="$2"; shift 2 ;;
@@ -86,6 +94,11 @@ yci_load_compliance_adapter() {
             *)  printf 'yci: unexpected argument: %s\n' "$1" >&2; return 1 ;;
         esac
     done
+
+    if [ "$do_export" -eq 1 ] && [ -n "$export_file_path" ]; then
+        printf 'yci: both --export and --export-file supplied; pick one\n' >&2
+        return 1
+    fi
 
     if [ -n "$profile_json_path" ] && [ -n "$regime_direct" ]; then
         printf 'yci: both --profile-json-path and --regime supplied; pick one\n' >&2
@@ -167,10 +180,23 @@ yci_load_compliance_adapter() {
     local has_schema=0
     [ -f "${adapter_dir}/evidence-schema.json" ] && has_schema=1
 
+    if [ -n "$export_file_path" ]; then
+        if ! {
+            printf 'export YCI_ADAPTER_DIR=%q\n' "$adapter_dir"
+            printf 'export YCI_ADAPTER_REGIME=%q\n' "$regime"
+            printf 'export YCI_ADAPTER_HAS_SCHEMA=%q\n' "$has_schema"
+        } > "$export_file_path"; then
+            printf 'yci: cannot write export file: %s\n' "$export_file_path" >&2
+            return 1
+        fi
+        chmod 0600 "$export_file_path" 2>/dev/null || true
+        return 0
+    fi
+
     if [ "$do_export" -eq 1 ]; then
-        printf 'YCI_ADAPTER_DIR=%s\n' "$adapter_dir"
-        printf 'YCI_ADAPTER_REGIME=%s\n' "$regime"
-        printf 'YCI_ADAPTER_HAS_SCHEMA=%s\n' "$has_schema"
+        printf 'export YCI_ADAPTER_DIR=%q\n' "$adapter_dir"
+        printf 'export YCI_ADAPTER_REGIME=%q\n' "$regime"
+        printf 'export YCI_ADAPTER_HAS_SCHEMA=%q\n' "$has_schema"
     else
         printf '%s\n' "$adapter_dir"
     fi
