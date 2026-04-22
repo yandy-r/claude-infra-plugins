@@ -15,7 +15,6 @@ TZID_FIXTURE="$(fixture_path "blocked-tzid.ics")"
 # Test: ts inside blocked window → blocked with SUMMARY in rationale
 # ---------------------------------------------------------------------------
 test_ical_ts_blocked() {
-    local sb="$1"
     local out rc
     out="$("$ICAL_CHECK" --ts "2026-04-22T12:00:00Z" --source "$BLOCKED_FIXTURE" 2>/dev/null)"; rc=$?
     assert_exit 0 "$rc" "ical blocked: exit 0"
@@ -27,7 +26,6 @@ test_ical_ts_blocked() {
 # Test: ts 30 min before 60-min warn window → warning
 # ---------------------------------------------------------------------------
 test_ical_ts_warning() {
-    local sb="$1"
     local out rc
     # warning.ics has event at 13:00Z; ts 12:30Z is 30 min before (within 60-min warn)
     out="$("$ICAL_CHECK" --ts "2026-04-22T12:30:00Z" --source "$WARNING_FIXTURE" 2>/dev/null)"; rc=$?
@@ -40,7 +38,6 @@ test_ical_ts_warning() {
 # Test: ts well outside any event → allowed
 # ---------------------------------------------------------------------------
 test_ical_ts_allowed() {
-    local sb="$1"
     local out rc
     # open.ics has event at 2030-01-01; ts 2026-04-22 is well outside
     out="$("$ICAL_CHECK" --ts "2026-04-22T12:00:00Z" --source "$OPEN_FIXTURE" 2>/dev/null)"; rc=$?
@@ -76,7 +73,6 @@ EOF
 # ts 16:00 UTC = inside the Central window → blocked
 # ---------------------------------------------------------------------------
 test_ical_tzid_boundary() {
-    local sb="$1"
     local out rc
     # 16:00 UTC = 11:00 Chicago; event is 14:00-22:00 UTC → blocked
     out="$("$ICAL_CHECK" --ts "2026-04-22T16:00:00Z" --source "$TZID_FIXTURE" 2>/dev/null)"; rc=$?
@@ -89,7 +85,6 @@ test_ical_tzid_boundary() {
 # Test: ts before Central window (outside 14:00-22:00 UTC) → allowed
 # ---------------------------------------------------------------------------
 test_ical_tzid_outside() {
-    local sb="$1"
     local out rc
     # 12:00 UTC is before the 14:00Z start → allowed
     out="$("$ICAL_CHECK" --ts "2026-04-22T12:00:00Z" --source "$TZID_FIXTURE" 2>/dev/null)"; rc=$?

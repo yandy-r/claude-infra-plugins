@@ -38,7 +38,6 @@ print(json.dumps(data))
 # Test: valid profile with ical adapter → prints adapter directory path, exit 0
 # ---------------------------------------------------------------------------
 test_dispatcher_valid_ical() {
-    local sb="$1"
     local pf rc out
     pf="$(_profile_json_with_adapter "ical")"
     out="$("$DISPATCHER" --profile-json-path "$pf" 2>/dev/null)"; rc=$?
@@ -52,7 +51,6 @@ test_dispatcher_valid_ical() {
 # Test: valid profile with always-open adapter → exit 0
 # ---------------------------------------------------------------------------
 test_dispatcher_valid_always_open() {
-    local sb="$1"
     local pf rc out
     pf="$(_profile_json_with_adapter "always-open")"
     out="$("$DISPATCHER" --profile-json-path "$pf" 2>/dev/null)"; rc=$?
@@ -66,7 +64,6 @@ test_dispatcher_valid_always_open() {
 # Test: unknown adapter → exit 2
 # ---------------------------------------------------------------------------
 test_dispatcher_unknown_adapter() {
-    local sb="$1"
     local pf rc
     pf="$(_profile_json_with_adapter "my-unknown-adapter")"
     rc=0
@@ -79,7 +76,6 @@ test_dispatcher_unknown_adapter() {
 # Test: deferred adapter (servicenow-cab) → exit 5 with "deferred" in stderr
 # ---------------------------------------------------------------------------
 test_dispatcher_deferred_adapter() {
-    local sb="$1"
     local pf rc out_err
     pf="$(_profile_json_with_adapter "servicenow-cab")"
     rc=0
@@ -93,7 +89,6 @@ test_dispatcher_deferred_adapter() {
 # Test: --adapter flag directly (bypasses JSON)
 # ---------------------------------------------------------------------------
 test_dispatcher_adapter_flag() {
-    local sb="$1"
     local rc out
     out="$("$DISPATCHER" --adapter "json-schedule" 2>/dev/null)"; rc=$?
     assert_exit 0 "$rc" "dispatcher --adapter flag: exit 0"

@@ -13,7 +13,6 @@ WARNING_FIXTURE="$(fixture_path "warning.schedule.json")"
 # Test: ts inside blackout → blocked with label in rationale
 # ---------------------------------------------------------------------------
 test_json_ts_blocked() {
-    local sb="$1"
     local out rc
     # blackout.schedule.json has blackout 2026-04-22T00:00:00Z to 2026-04-23T00:00:00Z
     out="$("$JSON_CHECK" --ts "2026-04-22T12:00:00Z" --source "$BLOCKED_FIXTURE" 2>/dev/null)"; rc=$?
@@ -27,7 +26,6 @@ test_json_ts_blocked() {
 # warning.schedule.json has blackout at 13:00Z; ts 12:30Z is 30 min before
 # ---------------------------------------------------------------------------
 test_json_ts_warning() {
-    local sb="$1"
     local out rc
     out="$("$JSON_CHECK" --ts "2026-04-22T12:30:00Z" --source "$WARNING_FIXTURE" 2>/dev/null)"; rc=$?
     assert_exit 0 "$rc" "json warning: exit 0"
@@ -39,7 +37,6 @@ test_json_ts_warning() {
 # Test: ts well outside blackout → allowed
 # ---------------------------------------------------------------------------
 test_json_ts_allowed() {
-    local sb="$1"
     local out rc
     # 2026-04-24 is after both blackouts in blackout.schedule.json
     out="$("$JSON_CHECK" --ts "2026-04-24T12:00:00Z" --source "$BLOCKED_FIXTURE" 2>/dev/null)"; rc=$?

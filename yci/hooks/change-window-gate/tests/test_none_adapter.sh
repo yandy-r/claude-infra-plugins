@@ -10,7 +10,6 @@ NONE_CHECK="${CLAUDE_PLUGIN_ROOT}/skills/_shared/change-window-adapters/none/scr
 # Test: default → blocked (no override, no flags)
 # ---------------------------------------------------------------------------
 test_none_default_blocked() {
-    local sb="$1"
     unset YCI_CWG_OVERRIDE
     local out rc
     out="$("$NONE_CHECK" --ts "2026-04-22T12:00:00Z" --timezone "UTC" 2>/dev/null)"; rc=$?
@@ -23,7 +22,6 @@ test_none_default_blocked() {
 # Test: YCI_CWG_OVERRIDE=1 → allowed
 # ---------------------------------------------------------------------------
 test_none_override_allowed() {
-    local sb="$1"
     local out rc
     out="$(YCI_CWG_OVERRIDE=1 "$NONE_CHECK" --ts "2026-04-22T12:00:00Z" --timezone "UTC" 2>/dev/null)"; rc=$?
     assert_exit 0 "$rc" "none override: exit 0"
@@ -34,7 +32,6 @@ test_none_override_allowed() {
 # Test: no flags at all → blocked (override not set)
 # ---------------------------------------------------------------------------
 test_none_no_flags_blocked() {
-    local sb="$1"
     unset YCI_CWG_OVERRIDE
     local out rc
     out="$("$NONE_CHECK" 2>/dev/null)"; rc=$?
