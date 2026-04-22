@@ -271,6 +271,135 @@ is a defect.
 
 ---
 
+## Change-window adapter Pattern
+
+Change-window enforcement in `yci` is an adapter, not a mode. The active customer profile's
+`change_window.adapter` field names the adapter; `load-change-window-adapter.sh` resolves it to a
+directory; `window-decision.sh` invokes it. This mirrors the compliance-adapter and
+inventory-adapter patterns (PRD §5.4). Skills and hooks must never hard-code schedule logic — all
+window evaluation happens inside an adapter.
+
+The shipped adapters are declared in `yci/skills/_shared/scripts/change-window-adapter-schema.sh`
+(`YCI_CW_ADAPTERS_SHIPPED`). The `servicenow-cab` adapter is declared deferred
+(`YCI_CW_ADAPTERS_DEFERRED`) — a profile referencing it receives a useful error from the dispatcher
+rather than a crash.
+
+See `docs/prps/plans/change-window-gate.plan.md` for the locked decisions (D1–D7) and PRD §5.4 for
+the design contract.
+
+### Directory Layout
+
+Adapters live under `yci/skills/_shared/change-window-adapters/`, one directory per adapter:
+
+```text
+yci/skills/_shared/change-window-adapters/
+├── ical/
+│   ├── ADAPTER.md              # interface, supported .ics features, security note
+│   └── scripts/
+│       ├── check.sh            # bash wrapper; delegates to ical_eval.py
+│       └── ical_eval.py        # stdlib-only iCal parser
+├── json-schedule/
+│   ├── ADAPTER.md
+│   ├── schema.json             # draft-07 schema for the blackout schedule JSON
+│   └── scripts/
+│       ├── check.sh
+│       └── schedule_eval.py    # stdlib-only JSON schedule evaluator
+├── always-open/
+│   ├── ADAPTER.md              # bookend: always allowed
+│   └── scripts/
+│       └── check.sh
+└── none/
+    ├── ADAPTER.md              # paranoid bookend: blocked unless YCI_CWG_OVERRIDE=1
+    └── scripts/
+        └── check.sh
+```
+
+### Required Per-Adapter Files
+
+The filesystem contract is declared in `yci/skills/_shared/scripts/change-window-adapter-schema.sh`:
+
+- `YCI_CW_ADAPTER_REQUIRED_FILES=(ADAPTER.md scripts/check.sh)` — both are mandatory.
+
+The validator (`scripts/validate.sh :: validate_change_window_adapters`) enforces this list for
+every directory under `yci/skills/_shared/change-window-adapters/`.
+
+### `scripts/check.sh` Interface
+
+Every adapter's `check.sh` MUST accept the following flags:
+
+| Flag                      | Required | Default | Description                                                |
+| ------------------------- | -------- | ------- | ---------------------------------------------------------- |
+| `--ts <iso8601>`          | yes      | —       | Proposed-change timestamp in UTC ISO-8601.                 |
+| `--source <path>`         | no       | —       | Path to the adapter's schedule source (`.ics` or `.json`). |
+| `--timezone <iana>`       | no       | `UTC`   | IANA timezone name for rationale strings.                  |
+| `--warn-before-minutes N` | no       | `60`    | Emit `warning` when next blackout starts within N minutes. |
+
+Adapters that do not use a source file (e.g., `always-open`, `none`) must accept `--source` for
+flag-surface compatibility but may ignore it. Unknown flags must exit 1 (usage error).
+
+### Decision JSON (stdout, one line)
+
+Every adapter MUST emit exactly one JSON object on stdout:
+
+```json
+{
+  "decision": "allowed|warning|blocked",
+  "rationale": "<string>",
+  "adapter": "<adapter-name>",
+  "window_source": "<abs-path-or-null>"
+}
+```
+
+The `decision` field must be one of the three literal strings `allowed`, `warning`, or `blocked`.
+Any other value causes `window-decision.sh` to emit `cwg-adapter-error` and fail closed.
+`window_source` must be the resolved absolute path to the schedule file, or the JSON literal `null`
+for adapters with no file-based source.
+
+### Exit Codes
+
+| Code | Meaning                                                              |
+| ---- | -------------------------------------------------------------------- |
+| `0`  | Decision emitted (any of `allowed`, `warning`, `blocked`).           |
+| `2`  | Adapter config error: source file missing, unreadable, or malformed. |
+| `3`  | Runtime error: `python3` not available, `zoneinfo` missing, etc.     |
+
+Non-zero exits are caught by `cwg_decide` in `window-decision.sh` and translated to a `blocked`
+decision with `cwg-adapter-error` rationale.
+
+### `YCI_CWG_OVERRIDE=1` Semantics
+
+The `none` adapter checks `YCI_CWG_OVERRIDE` itself — it is the only adapter that treats the envvar
+as its primary control. All other adapters evaluate their schedule regardless of `YCI_CWG_OVERRIDE`;
+the short-circuit for other adapters happens at the `window-decision.sh` and `pretool.sh` level
+before the adapter is invoked.
+
+Do NOT add `YCI_CWG_OVERRIDE` handling to newly written adapters. The single exception is `none`,
+which requires it by design. See `yci/skills/_shared/change-window-adapters/none/ADAPTER.md`.
+
+### How to Add a New Adapter
+
+1. **Create the adapter directory** at `yci/skills/_shared/change-window-adapters/<adapter-name>/`.
+
+2. **Write `ADAPTER.md`** covering: adapter name, purpose, profile-wiring example, interface flags,
+   emitted JSON shape, exit codes, any unsupported features, and a security note. Use
+   `ical/ADAPTER.md` as the canonical model.
+
+3. **Write `scripts/check.sh`** implementing the interface above. Validate required flags; emit
+   decision JSON to stdout; write errors to stderr; use exit codes 0/2/3. Use
+   `#!/usr/bin/env bash` + `set -euo pipefail`.
+
+4. **Register the adapter** by adding it to `YCI_CW_ADAPTERS_SHIPPED` in
+   `yci/skills/_shared/scripts/change-window-adapter-schema.sh`. Adapters not in this list receive a
+   "shipped but missing files" error from the dispatcher.
+
+5. **Write tests** in `yci/hooks/change-window-gate/tests/test_<adapter>_adapter.sh`. Cover at
+   minimum: ts in blackout (blocked), ts in warning zone (warning), ts outside all windows
+   (allowed), malformed source file (exit 2).
+
+6. **Update this subsection** with the new adapter name and a one-sentence description.
+
+---
+
 ## Telemetry sanitizer (cross-customer redaction)
 
 Skills and hooks that write customer-scoped artifacts should run text through the shared helper
