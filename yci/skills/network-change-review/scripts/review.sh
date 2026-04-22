@@ -11,7 +11,6 @@
 #   --data-root <path>   override data root (else $YCI_DATA_ROOT or ~/.config/yci)
 #   --customer <name>    override active customer (else resolved via env/dotfile/state)
 #   --adapter <regime>   compliance adapter override (else from profile)
-#   --format <format>    deliverable format override (else from profile.deliverable.format)
 #   --output-dir <path>  override final artifact directory
 #   --change-plan <path> pre-generated change plan markdown (from ycc:planner subagent)
 #   --diff-review <path> pre-generated diff review markdown (from yci:change-reviewer subagent)
@@ -50,7 +49,6 @@ Options:
   --data-root <path>   Override data root (else $YCI_DATA_ROOT or ~/.config/yci)
   --customer <name>    Override active customer (else resolved from env/dotfile/state)
   --adapter <regime>   Compliance adapter override (else from profile)
-  --format <format>    Deliverable format override (else from profile.deliverable.format)
   --output-dir <path>  Override final artifact directory
   --change-plan <path> Pre-generated change plan markdown (from ycc:planner)
   --diff-review <path> Pre-generated diff review markdown (from yci:change-reviewer)
@@ -69,7 +67,7 @@ EOF
 step 1 "Parsing flags and validating required inputs"
 
 change_path="" data_root_flag="" customer_flag=""
-adapter_flag="" format_flag=""   output_dir_flag=""
+adapter_flag="" output_dir_flag=""
 change_plan_path="" diff_review_path=""
 
 while [[ $# -gt 0 ]]; do
@@ -78,7 +76,6 @@ while [[ $# -gt 0 ]]; do
     --data-root)    data_root_flag="${2:?--data-root requires a path}"; shift 2 ;;
     --customer)     customer_flag="${2:?--customer requires a name}";   shift 2 ;;
     --adapter)      adapter_flag="${2:?--adapter requires a regime}";   shift 2 ;;
-    --format)       format_flag="${2:?--format requires a value}";      shift 2 ;;
     --output-dir)   output_dir_flag="${2:?--output-dir requires a path}"; shift 2 ;;
     --change-plan)  change_plan_path="${2:?--change-plan requires a path}"; shift 2 ;;
     --diff-review)  diff_review_path="${2:?--diff-review requires a path}"; shift 2 ;;

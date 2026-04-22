@@ -20,8 +20,8 @@ PY
 }
 
 run_case() {
-    local regime="$1" fixture="$2" manifest="$3" stub="$4" signer="$5"
-    local sb out profile_json bundle_json rendered
+    local regime="$1" fixture="$2" manifest="$3" stub="$4"
+    local sb profile_json bundle_json rendered
     sb="$(mktemp -d)"
     trap 'rm -rf "${sb}"' RETURN
 
@@ -57,8 +57,8 @@ run_case() {
     esac
 }
 
-run_case commercial "${FIXTURES_DIR}/profiles/commercial.yaml" "${FIXTURES_DIR}/manifests/commercial.yaml" "${FIXTURES_DIR}/stubs/commercial.yaml" minisign
-run_case hipaa "${FIXTURES_DIR}/profiles/hipaa.yaml" "${FIXTURES_DIR}/manifests/hipaa.yaml" "${FIXTURES_DIR}/stubs/hipaa.yaml" ssh-keygen
-run_case pci "${FIXTURES_DIR}/profiles/pci.yaml" "${FIXTURES_DIR}/manifests/pci.yaml" "${FIXTURES_DIR}/stubs/pci.yaml" minisign
-run_case soc2 "${FIXTURES_DIR}/profiles/soc2.yaml" "${FIXTURES_DIR}/manifests/soc2.yaml" "${FIXTURES_DIR}/stubs/soc2.yaml" ssh-keygen
+run_case commercial "${FIXTURES_DIR}/profiles/commercial.yaml" "${FIXTURES_DIR}/manifests/commercial.yaml" "${FIXTURES_DIR}/stubs/commercial.yaml"
+run_case hipaa "${FIXTURES_DIR}/profiles/hipaa.yaml" "${FIXTURES_DIR}/manifests/hipaa.yaml" "${FIXTURES_DIR}/stubs/hipaa.yaml"
+run_case pci "${FIXTURES_DIR}/profiles/pci.yaml" "${FIXTURES_DIR}/manifests/pci.yaml" "${FIXTURES_DIR}/stubs/pci.yaml"
+run_case soc2 "${FIXTURES_DIR}/profiles/soc2.yaml" "${FIXTURES_DIR}/manifests/soc2.yaml" "${FIXTURES_DIR}/stubs/soc2.yaml"
 yci_test_summary

@@ -17,6 +17,7 @@ readonly STYLE_EXCLUDES_LOADED=1
 # Paths are matched against repo-relative file paths: a path is excluded when
 # it equals any entry OR begins with "<entry>/". Keep entries in the form
 # they appear in the worktree (no leading or trailing slash).
+# shellcheck disable=SC2034  # STYLE_EXCLUDES is consumed by sourcing callers.
 STYLE_EXCLUDES=(
     # Language package / build output
     node_modules

@@ -58,9 +58,9 @@ EOF
     payload="$(printf '{"tool_name":"Read","tool_input":{"file_path":"%s"}}' \
         "$data/inventories/acme/cross-link")"
 
-    local stdout stderr rc
+    local stdout rc
     stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/tmp/yci-test-sym-stderr-$$)"; rc=$?
-    stderr="$(cat /tmp/yci-test-sym-stderr-$$ 2>/dev/null)"; rm -f /tmp/yci-test-sym-stderr-$$
+    rm -f /tmp/yci-test-sym-stderr-$$
 
     assert_exit 0 "$rc" "symlink_escape: exit 0"
     assert_contains "$stdout" '{"hookSpecificOutput"' "symlink_escape: stdout has hookSpecificOutput"

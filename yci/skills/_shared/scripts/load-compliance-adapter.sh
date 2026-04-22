@@ -44,9 +44,15 @@ if [ -r "${_ADAPTER_SCHEMA_LIB}" ]; then
     . "${_ADAPTER_SCHEMA_LIB}"
 else
     printf 'yci: warning: adapter-schema.sh not found; using built-in defaults\n' >&2
+    # These arrays are defined here as fallback defaults; callers that sourced
+    # this file read them. shellcheck can't see the external consumption.
+    # shellcheck disable=SC2034
     YCI_ADAPTER_REQUIRED_FILES=(ADAPTER.md)
+    # shellcheck disable=SC2034
     YCI_ADAPTER_PHASE1_FILES=(evidence-template.md handoff-checklist.md)
+    # shellcheck disable=SC2034
     YCI_ADAPTER_PHASE1_REGIMES=(commercial none)
+    # shellcheck disable=SC2034
     YCI_ADAPTER_SCHEMA_EXEMPT=(none)
 fi
 

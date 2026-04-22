@@ -7,6 +7,7 @@ if [[ ! -r "${HELPERS}" ]]; then
     printf 'run-all.sh: missing or unreadable helpers.sh at %s\n' "${HELPERS}" >&2
     exit 1
 fi
+# shellcheck source=./helpers.sh
 source "${HELPERS}"
 
 VERBOSE=0

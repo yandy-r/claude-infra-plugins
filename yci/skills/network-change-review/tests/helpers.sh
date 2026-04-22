@@ -13,6 +13,8 @@ YCI_TEST_FILE="${BASH_SOURCE[1]##*/}"  # caller's basename
 # Resolve key directory paths (tolerates missing dirs — scripts may not yet exist)
 _HELPERS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
+# SKILL_ROOT_SCRIPTS is consumed by test_render_*.sh scripts that source this file.
+# shellcheck disable=SC2034
 if cd "${_HELPERS_DIR}/../scripts" 2>/dev/null; then
     SKILL_ROOT_SCRIPTS="$(pwd -P)"
     cd "${_HELPERS_DIR}" || true

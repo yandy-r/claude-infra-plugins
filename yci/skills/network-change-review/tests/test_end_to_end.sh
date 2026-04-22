@@ -253,9 +253,6 @@ test_ac4_rollback_mechanical_inverse() {
     local orig
     orig="$(cat "$FIXTURES_ROOT/changes/unified-diff.patch")"
 
-    local rollback
-    rollback="$(cat "$rollback_file")"
-
     # Build a normalized-change envelope wrapping the rollback content (which
     # itself is a unified diff), then run derive-rollback.sh on it.  The
     # result should equal the original diff (reverse-of-reverse = identity).

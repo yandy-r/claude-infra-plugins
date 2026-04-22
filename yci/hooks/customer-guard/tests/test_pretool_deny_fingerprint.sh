@@ -47,9 +47,9 @@ EOF
     # Payload references bb01.bigbank.corp — a hostname from bigbank's inventory only.
     local payload='{"tool_name":"Write","tool_input":{"content":"connecting to bb01.bigbank.corp"}}'
 
-    local stdout stderr rc
+    local stdout rc
     stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/tmp/yci-test-stderr-$$)"; rc=$?
-    stderr="$(cat /tmp/yci-test-stderr-$$ 2>/dev/null)"; rm -f /tmp/yci-test-stderr-$$
+    rm -f /tmp/yci-test-stderr-$$
 
     assert_exit 0 "$rc" "fingerprint_collision: exit 0"
     assert_contains "$stdout" '{"hookSpecificOutput"' "fingerprint_collision: stdout has hookSpecificOutput"

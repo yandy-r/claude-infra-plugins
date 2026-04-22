@@ -48,9 +48,9 @@ EOF
     payload="$(printf '{"tool_name":"Read","tool_input":{"file_path":"%s"}}' \
         "$data/inventories/bigbank/hosts.yaml")"
 
-    local stdout stderr rc
+    local stdout rc
     stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/tmp/yci-test-stderr-$$)"; rc=$?
-    stderr="$(cat /tmp/yci-test-stderr-$$ 2>/dev/null)"; rm -f /tmp/yci-test-stderr-$$
+    rm -f /tmp/yci-test-stderr-$$
 
     assert_exit 0 "$rc" "path_collision: exit 0"
     assert_contains "$stdout" '{"hookSpecificOutput"' "path_collision: stdout has hookSpecificOutput"
