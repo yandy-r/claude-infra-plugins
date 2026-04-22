@@ -99,6 +99,12 @@ test_yci_fail_open_env() {
 }
 
 # ---------------------------------------------------------------------------
+# test_yci_skill_bootstrap_allowed: a `Skill(yci:customer-profile)` call with
+# mode `init` in its args — the real payload shape Claude Code emits when a
+# slash command like `/yci:init itcn` dispatches to the customer-profile skill.
+# The Skill tool carries `skill` and `args` fields (not `command`), and the
+# slash-command literal is NOT in the payload by the time the hook sees it.
+# ---------------------------------------------------------------------------
 test_yci_skill_bootstrap_allowed() {
     local sb="$1"
     _pretool_ok || { _yci_test_report PASS "yci_skill_bootstrap: skipped (pretool.sh not found)"; return 0; }
@@ -109,13 +115,117 @@ test_yci_skill_bootstrap_allowed() {
     export YCI_DATA_ROOT="$data"
     export YCI_DATA_ROOT_RESOLVED="$data"
 
-    local payload='{"tool_name":"Skill","tool_input":{"command":"/yci:init itcn"}}'
+    local payload='{"tool_name":"Skill","tool_input":{"skill":"yci:customer-profile","args":"init itcn"}}'
 
     local stdout rc
     stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
 
     assert_exit 0 "$rc" "yci_skill_bootstrap: exit 0"
     assert_eq "$stdout" "" "yci_skill_bootstrap: stdout empty (allow)"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
+# Same shape as above but for `switch` mode — `/yci:switch <customer>` also
+# needs to work against a no-active-customer state when the MRU state.json is
+# missing or empty.
+# ---------------------------------------------------------------------------
+test_yci_skill_switch_bootstrap_allowed() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_skill_switch_bootstrap: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local payload='{"tool_name":"Skill","tool_input":{"skill":"yci:customer-profile","args":"switch itcn"}}'
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_skill_switch_bootstrap: exit 0"
+    assert_eq "$stdout" "" "yci_skill_switch_bootstrap: stdout empty (allow)"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
+# `whoami` with no active customer is a legitimate "who am I?" query — the
+# skill answers "no active customer" rather than refusing, so the guard must
+# not preemptively block the Skill invocation.
+# ---------------------------------------------------------------------------
+test_yci_skill_whoami_bootstrap_allowed() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_skill_whoami_bootstrap: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local payload='{"tool_name":"Skill","tool_input":{"skill":"yci:customer-profile","args":"whoami"}}'
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_skill_whoami_bootstrap: exit 0"
+    assert_eq "$stdout" "" "yci_skill_whoami_bootstrap: stdout empty (allow)"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
+# A non-customer-profile yci skill MUST still deny when no active customer
+# is set — the bootstrap lane is intentionally narrow.
+# ---------------------------------------------------------------------------
+test_yci_skill_non_customer_profile_denied() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_skill_non_customer_profile_denied: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local payload='{"tool_name":"Skill","tool_input":{"skill":"yci:guard-check","args":"/tmp/x"}}'
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_skill_non_customer_profile_denied: exit 0 (deny emitted as JSON)"
+    assert_contains "$stdout" '"permissionDecision": "deny"' "yci_skill_non_customer_profile_denied: decision=deny"
+    assert_contains "$stdout" "no active customer" "yci_skill_non_customer_profile_denied: reason mentions no active customer"
+
+    unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
+}
+
+# ---------------------------------------------------------------------------
+# Regression guard: some upstream payloads (e.g., Task tool prompts or legacy
+# paths) still carry a literal `/yci:init` string. The marker-based lane must
+# keep working even when the structural Skill check doesn't match.
+# ---------------------------------------------------------------------------
+test_yci_slash_command_bootstrap_allowed() {
+    local sb="$1"
+    _pretool_ok || { _yci_test_report PASS "yci_slash_command_bootstrap: skipped (pretool.sh not found)"; return 0; }
+
+    local data="$sb/data"
+    mkdir -p "$data/profiles"
+
+    export YCI_DATA_ROOT="$data"
+    export YCI_DATA_ROOT_RESOLVED="$data"
+
+    local payload='{"tool_name":"Task","tool_input":{"prompt":"run /yci:init itcn for me"}}'
+
+    local stdout rc
+    stdout="$(printf '%s' "$payload" | bash "$PRETOOL" 2>/dev/null)"; rc=$?
+
+    assert_exit 0 "$rc" "yci_slash_command_bootstrap: exit 0"
+    assert_eq "$stdout" "" "yci_slash_command_bootstrap: stdout empty (allow)"
 
     unset YCI_DATA_ROOT YCI_DATA_ROOT_RESOLVED
 }
@@ -171,6 +281,10 @@ with_sandbox test_non_yci_payload_allowed
 with_sandbox test_yci_no_active_denied
 with_sandbox test_yci_fail_open_env
 with_sandbox test_yci_skill_bootstrap_allowed
+with_sandbox test_yci_skill_switch_bootstrap_allowed
+with_sandbox test_yci_skill_whoami_bootstrap_allowed
+with_sandbox test_yci_skill_non_customer_profile_denied
+with_sandbox test_yci_slash_command_bootstrap_allowed
 with_sandbox test_yci_bash_bootstrap_allowed
 with_sandbox test_ycc_skill_allowed
 

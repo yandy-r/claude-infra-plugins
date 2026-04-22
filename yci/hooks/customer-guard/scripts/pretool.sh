@@ -122,6 +122,15 @@ _bootstrap_marker_present() {
     _payload_has_string_marker "$payload" "/yci:init" && return 0
     _payload_has_string_marker "$payload" "/yci:switch" && return 0
 
+    # Structural check for the real Skill tool payload shape:
+    #   {"tool_name":"Skill","tool_input":{"skill":"yci:customer-profile","args":"init itcn"}}
+    # The customer-profile skill is the only skill whose purpose is to establish
+    # or switch active-customer state, so any invocation of it is bootstrap-safe
+    # when no active customer is set (init, switch, and whoami all qualify).
+    #
+    # The fallback payload-level substring check catches shapes where the skill
+    # id and mode word land in sibling fields (the per-value check in the
+    # original implementation short-circuited before the `and`).
     python3 - "$payload" <<'PY'
 import json
 import sys
@@ -143,10 +152,17 @@ try:
 except Exception:
     sys.exit(1)
 
-for value in walk(payload):
-    lowered = value.lower()
-    if "yci:customer-profile" in lowered and ("init" in lowered or "switch" in lowered):
-        sys.exit(0)
+if isinstance(payload, dict):
+    tool_name = payload.get("tool_name")
+    tool_input = payload.get("tool_input")
+    if tool_name == "Skill" and isinstance(tool_input, dict):
+        skill = tool_input.get("skill")
+        if isinstance(skill, str) and skill.strip().lower() == "yci:customer-profile":
+            sys.exit(0)
+
+blob = " ".join(walk(payload)).lower()
+if "yci:customer-profile" in blob and ("init" in blob or "switch" in blob):
+    sys.exit(0)
 
 sys.exit(1)
 PY
