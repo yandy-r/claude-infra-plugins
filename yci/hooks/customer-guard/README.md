@@ -19,6 +19,9 @@ Claude Code — Cursor, Codex, and opencode have advisory stubs only (see
 
 ## Install Check
 
+> Both yci hooks are wired via `yci/hooks/hooks.json`; see `../change-window-gate/README.md` for the
+> second hook.
+
 Confirm the yci plugin is enabled and the hook is wired before relying on it in a production
 engagement.
 

@@ -308,6 +308,12 @@ test_profile_commit_outside_git_repo() {
     # shellcheck disable=SC2064
     trap "rm -rf '${outside_dir}'" RETURN
 
+    # When the suite is invoked from a git hook (pre-push / pre-commit / etc.),
+    # GIT_DIR and GIT_WORK_TREE are set to the caller's repo — which makes any
+    # subprocess `git rev-parse` succeed regardless of cwd. That defeats the
+    # "outside any git repo" premise of this test. Scrub those vars here.
+    unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+
     local profile_json="${outside_dir}/profile.json"
     python3 - "${FIXTURE_PROFILE_YAML}" "${profile_json}" <<'PYEOF'
 import sys, json, yaml

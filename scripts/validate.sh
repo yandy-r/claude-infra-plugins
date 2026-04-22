@@ -1590,6 +1590,358 @@ PY
 }
 
 # ---------------------------------------------------------------------------
+# change-window-gate hook checks
+# ---------------------------------------------------------------------------
+validate_change_window_gate_hook() {
+    echo "--- change-window-gate hook ---"
+
+    local hook_dir="${REPO_ROOT}/yci/hooks/change-window-gate"
+    local hook_json="${hook_dir}/hook.json"
+    local hook_scripts_dir="${hook_dir}/scripts"
+
+    # 1. Directory exists
+    if [ ! -d "${hook_dir}" ]; then
+        fail "yci/hooks/change-window-gate/ directory missing"
+        return
+    fi
+    ok "yci/hooks/change-window-gate/ present"
+
+    # 2. hook.json — valid JSON, PreToolUse matcher "*", one command pointing at pretool.sh
+    if [ ! -f "${hook_json}" ]; then
+        fail "change-window-gate/hook.json missing"
+    elif ! python3 -m json.tool "${hook_json}" > /dev/null 2>&1; then
+        fail "change-window-gate/hook.json: invalid JSON"
+    else
+        ok "change-window-gate/hook.json present and valid JSON"
+        if python3 -c "
+import json, sys
+with open('${hook_json}') as f:
+    data = json.load(f)
+hooks = data.get('hooks', {})
+pretool_hooks = hooks.get('PreToolUse', [])
+if not pretool_hooks:
+    sys.stderr.write('hook.json: missing hooks.PreToolUse list\n'); sys.exit(1)
+entry = pretool_hooks[0]
+if entry.get('matcher') != '*':
+    sys.stderr.write('hook.json: matcher must be \"*\"\n'); sys.exit(1)
+cmds = entry.get('hooks', [])
+if not cmds:
+    sys.stderr.write('hook.json: hooks list is empty\n'); sys.exit(1)
+cmd = cmds[0].get('command', '')
+if 'change-window-gate/scripts/pretool.sh' not in cmd:
+    sys.stderr.write('hook.json: command does not reference change-window-gate/scripts/pretool.sh\n'); sys.exit(1)
+" 2>/dev/null; then
+            ok "change-window-gate/hook.json: matcher \"*\", command references pretool.sh"
+        else
+            fail "change-window-gate/hook.json: unexpected structure (expected PreToolUse matcher \"*\" with change-window-gate/scripts/pretool.sh)"
+        fi
+    fi
+
+    # 3. pretool.sh — exists, executable, correct shebang, set -uo pipefail (hook entrypoint, no -e)
+    local pretool="${hook_scripts_dir}/pretool.sh"
+    if [ ! -f "${pretool}" ]; then
+        fail "change-window-gate/scripts/pretool.sh missing"
+    elif ! [ -x "${pretool}" ]; then
+        fail "change-window-gate/scripts/pretool.sh: not executable"
+    elif ! head -1 "${pretool}" | grep -q '^#!/usr/bin/env bash'; then
+        fail "change-window-gate/scripts/pretool.sh: wrong shebang (expected #!/usr/bin/env bash)"
+    elif head -30 "${pretool}" | grep -qE '^[[:space:]]*set[[:space:]]+-uo[[:space:]]+pipefail[[:space:]]*(#.*)?$'; then
+        ok "change-window-gate/scripts/pretool.sh: executable, shebang, set -uo pipefail"
+    else
+        fail "change-window-gate/scripts/pretool.sh: missing 'set -uo pipefail' in first 30 lines"
+    fi
+
+    # 4. Sourceable lib scripts — executable, correct shebang, NO set -euo pipefail at file scope
+    local -a lib_scripts=(destructive-classifier.sh purpose-classifier.sh window-decision.sh)
+    for s in "${lib_scripts[@]}"; do
+        local p="${hook_scripts_dir}/${s}"
+        if [ ! -f "${p}" ]; then
+            fail "change-window-gate/scripts/${s}: missing"
+            continue
+        fi
+        if ! [ -x "${p}" ]; then
+            fail "change-window-gate/scripts/${s}: not executable"
+            continue
+        fi
+        if ! head -1 "${p}" | grep -q '^#!/usr/bin/env bash'; then
+            fail "change-window-gate/scripts/${s}: wrong shebang (expected #!/usr/bin/env bash)"
+            continue
+        fi
+        # Sourceable libs MUST NOT self-enable set -euo pipefail at file scope
+        if head -20 "${p}" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+            fail "change-window-gate/scripts/${s}: sourceable library must not self-enable set -euo pipefail"
+        else
+            ok "change-window-gate/scripts/${s}: executable, shebang, no set -euo at file scope (sourceable lib)"
+        fi
+    done
+
+    # 5. shellcheck on all hook scripts
+    printf '\n--- shellcheck (change-window-gate hook scripts) ---\n'
+    if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
+        local sc_files=()
+        while IFS= read -r f; do sc_files+=("$f"); done \
+            < <(ls "${hook_scripts_dir}/"*.sh 2>/dev/null)
+        if [ "${#sc_files[@]}" -eq 0 ]; then
+            warn "shellcheck: no .sh files found in change-window-gate/scripts/"
+        elif "$SHELLCHECK_BIN" --severity=warning "${sc_files[@]}"; then
+            ok "shellcheck clean on change-window-gate hook scripts (${#sc_files[@]} files)"
+        else
+            fail "shellcheck reported warnings/errors (change-window-gate hook scripts)"
+        fi
+    else
+        warn "shellcheck not installed — skipping"
+    fi
+
+    # 6. README.md exists and is non-empty
+    if [ -s "${hook_dir}/README.md" ]; then
+        ok "change-window-gate/README.md present and non-empty"
+    else
+        fail "change-window-gate/README.md missing or empty"
+    fi
+
+    # Integration tests
+    local hook_tests_dir="${hook_dir}/tests"
+    if [ -x "${hook_tests_dir}/run-all.sh" ]; then
+        printf '\n--- change-window-gate integration tests ---\n'
+        if bash "${hook_tests_dir}/run-all.sh"; then
+            ok "change-window-gate integration tests pass"
+        else
+            fail "change-window-gate integration tests failed"
+        fi
+    else
+        warn "change-window-gate integration tests not yet present"
+    fi
+
+    # 7. references/capability-gaps.md and references/error-messages.md
+    #    (land in batch 6.2 — will resolve after fan-in merge)
+    for ref in capability-gaps.md error-messages.md; do
+        if [ -s "${hook_dir}/references/${ref}" ]; then
+            ok "change-window-gate/references/${ref} present and non-empty"
+        else
+            fail "change-window-gate/references/${ref} missing or empty (expected from batch 6.2)"
+        fi
+    done
+
+    # 8. targets/codex/codex-config-fragment.toml exists and is non-empty
+    #    (lands in batch 6.2 — will resolve after fan-in merge)
+    local codex_stub="${hook_dir}/targets/codex/codex-config-fragment.toml"
+    if [ -s "${codex_stub}" ]; then
+        ok "change-window-gate/targets/codex/codex-config-fragment.toml present and non-empty"
+    else
+        fail "change-window-gate/targets/codex/codex-config-fragment.toml missing or empty (expected from batch 6.2)"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# change-window-adapters checks
+# ---------------------------------------------------------------------------
+validate_change_window_adapters() {
+    echo "--- change-window adapters ---"
+
+    local schema_lib="${REPO_ROOT}/yci/skills/_shared/scripts/change-window-adapter-schema.sh"
+    local loader="${REPO_ROOT}/yci/skills/_shared/scripts/load-change-window-adapter.sh"
+    local adapters_root="${REPO_ROOT}/yci/skills/_shared/change-window-adapters"
+
+    # 1. adapters root directory exists
+    if [ ! -d "${adapters_root}" ]; then
+        fail "yci/skills/_shared/change-window-adapters/ directory missing"
+        return
+    fi
+    ok "yci/skills/_shared/change-window-adapters/ present"
+
+    # 2. schema lib exists and is sourceable
+    if [ ! -f "${schema_lib}" ]; then
+        fail "change-window-adapter-schema.sh: file not found"
+        return
+    fi
+    ok "change-window-adapter-schema.sh present"
+
+    # Source the schema lib to get YCI_CW_ADAPTERS_SHIPPED and YCI_CW_ADAPTER_REQUIRED_FILES
+    local schema_source_out
+    if schema_source_out="$(bash -c ". '${schema_lib}'; echo \"\${YCI_CW_ADAPTERS_SHIPPED[*]}\"" 2>&1)"; then
+        if [ -n "${schema_source_out}" ]; then
+            ok "change-window-adapter-schema.sh: sources cleanly; YCI_CW_ADAPTERS_SHIPPED non-empty"
+        else
+            fail "change-window-adapter-schema.sh: sourced without error but YCI_CW_ADAPTERS_SHIPPED is empty"
+        fi
+    else
+        fail "change-window-adapter-schema.sh: source failed: ${schema_source_out}"
+        return
+    fi
+
+    # 3. Per-adapter checks — iterate YCI_CW_ADAPTERS_SHIPPED
+    local shipped_list
+    shipped_list="$(bash -c ". '${schema_lib}'; printf '%s\n' \"\${YCI_CW_ADAPTERS_SHIPPED[@]}\"" 2>/dev/null)"
+    local adapter
+    while IFS= read -r adapter; do
+        [ -z "${adapter}" ] && continue
+        local adapter_dir="${adapters_root}/${adapter}"
+
+        # Directory exists
+        if [ ! -d "${adapter_dir}" ]; then
+            fail "change-window-adapters/${adapter}/: directory missing"
+            continue
+        fi
+        ok "change-window-adapters/${adapter}/: directory present"
+
+        # Each required file from YCI_CW_ADAPTER_REQUIRED_FILES is present
+        local required_files
+        required_files="$(bash -c ". '${schema_lib}'; printf '%s\n' \"\${YCI_CW_ADAPTER_REQUIRED_FILES[@]}\"" 2>/dev/null)"
+        local req_file
+        while IFS= read -r req_file; do
+            [ -z "${req_file}" ] && continue
+            if [ -e "${adapter_dir}/${req_file}" ]; then
+                ok "change-window-adapters/${adapter}/${req_file}: present"
+            else
+                fail "change-window-adapters/${adapter}/${req_file}: missing (required file)"
+            fi
+        done <<< "${required_files}"
+
+        # scripts/check.sh: executable, correct shebang, set -euo pipefail
+        local check_sh="${adapter_dir}/scripts/check.sh"
+        if [ ! -f "${check_sh}" ]; then
+            fail "change-window-adapters/${adapter}/scripts/check.sh: missing"
+            continue
+        fi
+        if ! [ -x "${check_sh}" ]; then
+            fail "change-window-adapters/${adapter}/scripts/check.sh: not executable"
+            continue
+        fi
+        if ! head -1 "${check_sh}" | grep -q '^#!/usr/bin/env bash'; then
+            fail "change-window-adapters/${adapter}/scripts/check.sh: wrong shebang (expected #!/usr/bin/env bash)"
+            continue
+        fi
+        if ! head -30 "${check_sh}" | grep -qE '^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail[[:space:]]*$'; then
+            fail "change-window-adapters/${adapter}/scripts/check.sh: missing 'set -euo pipefail' in first 30 lines"
+        else
+            ok "change-window-adapters/${adapter}/scripts/check.sh: executable, shebang, set -euo pipefail"
+        fi
+
+        # run shellcheck on check.sh
+        if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
+            if "$SHELLCHECK_BIN" --severity=warning "${check_sh}"; then
+                ok "change-window-adapters/${adapter}/scripts/check.sh: shellcheck clean"
+            else
+                fail "change-window-adapters/${adapter}/scripts/check.sh: shellcheck warnings/errors"
+            fi
+        fi
+
+        # Any .py files in scripts/ must compile via python3 -m py_compile
+        local py_file
+        while IFS= read -r py_file; do
+            [ -z "${py_file}" ] && continue
+            if python3 -m py_compile "${py_file}" 2>/dev/null; then
+                ok "change-window-adapters/${adapter}/scripts/$(basename "${py_file}"): compiles"
+            else
+                fail "change-window-adapters/${adapter}/scripts/$(basename "${py_file}"): py_compile failed"
+            fi
+        done < <(find "${adapter_dir}/scripts" -maxdepth 1 -type f -name '*.py' 2>/dev/null)
+
+    done <<< "${shipped_list}"
+
+    # 4. load-change-window-adapter.sh: exists, executable, shellcheck-clean
+    if [ ! -f "${loader}" ]; then
+        fail "load-change-window-adapter.sh: file not found"
+    else
+        ok "load-change-window-adapter.sh: present"
+
+        if ! [ -x "${loader}" ]; then
+            fail "load-change-window-adapter.sh: not executable"
+        else
+            ok "load-change-window-adapter.sh: executable"
+        fi
+
+        if ! head -1 "${loader}" | grep -q '^#!/usr/bin/env bash'; then
+            fail "load-change-window-adapter.sh: wrong shebang (expected #!/usr/bin/env bash)"
+        else
+            ok "load-change-window-adapter.sh: correct shebang"
+        fi
+
+        if SHELLCHECK_RESOLVE_OPTIONAL=1 resolve_shellcheck_bin; then
+            if "$SHELLCHECK_BIN" --severity=warning "${loader}"; then
+                ok "load-change-window-adapter.sh: shellcheck clean"
+            else
+                fail "load-change-window-adapter.sh: shellcheck warnings/errors"
+            fi
+        else
+            warn "shellcheck not installed — skipping load-change-window-adapter.sh check"
+        fi
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# combined hooks.json manifest + plugin.json redirect checks
+# ---------------------------------------------------------------------------
+validate_combined_hooks_manifest() {
+    echo "--- combined hooks manifest ---"
+
+    local hooks_json="${REPO_ROOT}/yci/hooks/hooks.json"
+    local plugin_json="${REPO_ROOT}/yci/.claude-plugin/plugin.json"
+
+    # 1. hooks.json valid JSON
+    if [ ! -f "${hooks_json}" ]; then
+        fail "yci/hooks/hooks.json missing"
+        return
+    fi
+    if ! python3 -m json.tool "${hooks_json}" > /dev/null 2>&1; then
+        fail "yci/hooks/hooks.json: invalid JSON"
+        return
+    fi
+    ok "yci/hooks/hooks.json: valid JSON"
+
+    # 2-4. Structure: PreToolUse list, matcher "*", customer-guard first, change-window-gate second
+    if python3 -c "
+import json, sys
+with open('${hooks_json}') as f:
+    data = json.load(f)
+
+hooks = data.get('hooks', {})
+pretool = hooks.get('PreToolUse')
+if not isinstance(pretool, list) or not pretool:
+    sys.stderr.write('hooks.json: hooks.PreToolUse must be a non-empty list\n'); sys.exit(1)
+
+entry = pretool[0]
+if entry.get('matcher') != '*':
+    sys.stderr.write('hooks.json: first PreToolUse matcher must be \"*\", got: ' + repr(entry.get('matcher')) + '\n'); sys.exit(1)
+
+hook_list = entry.get('hooks', [])
+if len(hook_list) < 2:
+    sys.stderr.write('hooks.json: expected at least 2 hook commands under PreToolUse[0].hooks\n'); sys.exit(1)
+
+first_cmd  = hook_list[0].get('command', '')
+second_cmd = hook_list[1].get('command', '')
+
+if 'customer-guard/scripts/pretool.sh' not in first_cmd:
+    sys.stderr.write('hooks.json: first hook command must reference customer-guard/scripts/pretool.sh, got: ' + repr(first_cmd) + '\n'); sys.exit(1)
+
+if 'change-window-gate/scripts/pretool.sh' not in second_cmd:
+    sys.stderr.write('hooks.json: second hook command must reference change-window-gate/scripts/pretool.sh, got: ' + repr(second_cmd) + '\n'); sys.exit(1)
+" 2>/dev/null; then
+        ok "hooks.json: PreToolUse list present, matcher \"*\", customer-guard first, change-window-gate second"
+    else
+        fail "hooks.json: unexpected structure (need PreToolUse[*].hooks: [customer-guard, change-window-gate])"
+    fi
+
+    # 5. plugin.json "hooks" value equals "./hooks/hooks.json"
+    if [ ! -f "${plugin_json}" ]; then
+        fail "yci/.claude-plugin/plugin.json missing"
+        return
+    fi
+    if python3 -c "
+import json, sys
+with open('${plugin_json}') as f:
+    data = json.load(f)
+hooks_val = data.get('hooks', '')
+if hooks_val != './hooks/hooks.json':
+    sys.stderr.write('plugin.json: \"hooks\" must be \"./hooks/hooks.json\", got: ' + repr(hooks_val) + '\n'); sys.exit(1)
+" 2>/dev/null; then
+        ok "plugin.json: \"hooks\" redirects to \"./hooks/hooks.json\""
+    else
+        fail "plugin.json: \"hooks\" does not equal \"./hooks/hooks.json\""
+    fi
+}
+
+# ---------------------------------------------------------------------------
 main() {
     echo "=== validate-yci-skills.sh ==="
     validate_hello_skill
@@ -1597,6 +1949,12 @@ main() {
     validate_customer_profile_skill
     echo
     validate_customer_guard_hook
+    echo
+    validate_change_window_gate_hook
+    echo
+    validate_change_window_adapters
+    echo
+    validate_combined_hooks_manifest
     echo
     validate_customer_isolation_lib
     echo

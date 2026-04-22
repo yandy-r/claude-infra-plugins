@@ -317,7 +317,7 @@ init_python_config() {
 }
 
 init_ts_config() {
-  copy_template "biome.json" "biome.json"
+  copy_template "biome.json.tmpl" "biome.json"
   copy_template "tsconfig.json" "tsconfig.json"
 
   if [[ -e "${TARGET_DIR}/package.json" ]]; then

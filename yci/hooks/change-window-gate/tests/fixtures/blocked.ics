@@ -1,0 +1,11 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//acme-test//change-window-test//EN
+BEGIN:VEVENT
+UID:blocked-test-001@acme-test
+DTSTART:20260422T000000Z
+DTEND:20260423T000000Z
+SUMMARY:Production freeze (synthetic)
+DESCRIPTION:Synthetic test fixture - full day blackout 2026-04-22 UTC
+END:VEVENT
+END:VCALENDAR

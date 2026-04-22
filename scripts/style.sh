@@ -42,7 +42,7 @@ BUNDLE_MANAGED_FILES=(
   "templates/python-pyproject.toml"
   "templates/rustfmt.toml"
   "templates/clippy.toml"
-  "templates/biome.json"
+  "templates/biome.json.tmpl"
   "templates/tsconfig.json"
   "templates/package.json"
 )

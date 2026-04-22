@@ -1,0 +1,11 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//acme-test//change-window-test//EN
+BEGIN:VEVENT
+UID:blocked-tzid-test-001@acme-test
+DTSTART;TZID=America/Chicago:20260422T090000
+DTEND;TZID=America/Chicago:20260422T170000
+SUMMARY:Central timezone maintenance (synthetic)
+DESCRIPTION:Synthetic test fixture - 09:00-17:00 America/Chicago = 14:00-22:00 UTC on 2026-04-22
+END:VEVENT
+END:VCALENDAR
