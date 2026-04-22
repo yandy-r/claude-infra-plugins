@@ -147,12 +147,13 @@ assert_error_id() {
         return
     fi
     # Extract the first code-block line inside the entry for this id.
-    # Handles both flush (^```$) and indented (^  ```$) fence markers.
+    # Handles flush (^```$), indented (^  ```$), and language-tagged
+    # (^```text$ / ^```bash$, with any leading indent) fence markers.
     local phrase
     phrase="$(awk -v id="$id" '
         /^### `/ { in_id = ($0 ~ id) ? 1 : 0 }
         in_id && /^- \*\*ID\*\*:/ { found_id=1 }
-        found_id && /^[[:space:]]*```[[:space:]]*$/ { in_block=!in_block; next }
+        found_id && /^[[:space:]]*```[[:alnum:]_-]*[[:space:]]*$/ { in_block=!in_block; next }
         found_id && in_block && /[^[:space:]]/ { gsub(/^[[:space:]]+/,""); print; exit }
     ' "$refs_md" | sed 's/[<>].*//' | head -1 | tr -d '\n')"
     if [ -z "$phrase" ]; then

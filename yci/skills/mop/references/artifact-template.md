@@ -37,8 +37,11 @@ precomputed before rendering.
 
 ## Method of Procedure
 
-**Change ID:** `{{change_id}}` **Customer:** `{{customer_id}}` **Compliance regime:**
-`{{compliance_regime}}` **Timestamp (UTC):** `{{timestamp_utc}}`
+<!-- prettier-ignore -->
+**Change ID:** `{{change_id}}`
+**Customer:** `{{customer_id}}`
+**Compliance regime:** `{{compliance_regime}}`
+**Timestamp (UTC):** `{{timestamp_utc}}`
 
 ---
 
