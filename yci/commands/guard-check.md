@@ -1,15 +1,18 @@
 ---
+
 description:
-  Ad-hoc cross-customer isolation check for a path or text blob using the customer-guard detection
-  library.
+Ad-hoc cross-customer isolation check for a path or text blob using the customer-guard detection
+library.
 argument-hint: "<path-or-text> [--dry-run] [--data-root <path>]"
 allowed-tools:
-  - Read
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-guard/scripts/*.sh:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
-  - Bash(cat:*)
-  - Bash(test:*)
+
+- Read
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-guard/scripts/_.sh:_)
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
+- Bash(cat:*)
+- Bash(test:*)
+
 ---
 
 # /yci:guard-check

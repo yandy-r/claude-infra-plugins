@@ -3,8 +3,8 @@ description: Load a yci customer profile and mark it active.
 argument-hint: "<customer> [--data-root <path>]"
 allowed-tools:
   - Read
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
   - Bash(cat:*)
   - Bash(test:*)
 ---
