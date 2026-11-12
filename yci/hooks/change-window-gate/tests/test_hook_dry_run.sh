@@ -4,7 +4,6 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 
-BLOCKED_FIXTURE="$(fixture_path "blocked.ics")"
 
 # ---------------------------------------------------------------------------
 # Test: dry-run mode with ical profile that would block
@@ -14,7 +13,8 @@ test_dry_run_allows_and_logs() {
     local sandbox="${sb}/data"
     mkdir -p "${sandbox}/profiles" "${sandbox}/logs"
 
-    write_profile_yaml "$sandbox" "acme-test" "ical" "$BLOCKED_FIXTURE" "UTC"
+    write_current_blackout_ics "${sandbox}/blocked.ics"
+    write_profile_yaml "$sandbox" "acme-test" "ical" "${sandbox}/blocked.ics" "UTC"
     export YCI_DATA_ROOT="$sandbox"
     export YCI_CUSTOMER="acme-test"
     export YCI_CWG_DRY_RUN=1
