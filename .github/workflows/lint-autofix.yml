@@ -49,11 +49,13 @@ jobs:
           node-version: lts/*
 
       - name: Apply formatters
-        run: ./scripts/style.sh format
+        # Same languages as lint.yml and the package.json format script. Without the flags,
+        # style.sh also runs an unpinned Biome over Markdown and YAML, which rewrites skill front matter.
+        run: ./scripts/style.sh format --python --docs
 
       - name: Apply auto-fixable lint
         # Unfixable violations are reported by the check workflow (lint.yml); do not block the push-back here.
-        run: ./scripts/style.sh lint --fix
+        run: ./scripts/style.sh lint --fix --python --docs --shell
         continue-on-error: true
 
       - name: Mint autofix App token
