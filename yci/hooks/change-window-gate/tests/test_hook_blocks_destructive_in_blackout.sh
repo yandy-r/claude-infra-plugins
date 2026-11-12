@@ -4,7 +4,6 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 
-BLOCKED_FIXTURE="$(fixture_path "blocked.ics")"
 
 # ---------------------------------------------------------------------------
 # Test: Bash rm -rf with ical profile + blocked window → deny
@@ -16,7 +15,8 @@ test_destructive_in_blackout_denied() {
     mkdir -p "${sandbox}/profiles"
 
     # Write a profile pointing to the blocked.ics fixture
-    write_profile_yaml "$sandbox" "acme-test" "ical" "$BLOCKED_FIXTURE" "UTC"
+    write_current_blackout_ics "${sandbox}/blocked.ics"
+    write_profile_yaml "$sandbox" "acme-test" "ical" "${sandbox}/blocked.ics" "UTC"
     export YCI_DATA_ROOT="$sandbox"
     export YCI_CUSTOMER="acme-test"
     unset YCI_CWG_OVERRIDE YCI_CWG_DRY_RUN
@@ -43,7 +43,8 @@ test_write_in_blackout_denied() {
     local sandbox="${sb}/data"
     mkdir -p "${sandbox}/profiles"
 
-    write_profile_yaml "$sandbox" "acme-test" "ical" "$BLOCKED_FIXTURE" "UTC"
+    write_current_blackout_ics "${sandbox}/blocked.ics"
+    write_profile_yaml "$sandbox" "acme-test" "ical" "${sandbox}/blocked.ics" "UTC"
     export YCI_DATA_ROOT="$sandbox"
     export YCI_CUSTOMER="acme-test"
     unset YCI_CWG_OVERRIDE YCI_CWG_DRY_RUN

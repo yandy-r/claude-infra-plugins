@@ -175,6 +175,38 @@ fixture_path() {
     printf '%s/fixtures/%s' "${_HELPERS_DIR}" "${1:-}"
 }
 
+# write_current_blackout_ics <path>
+# Writes an iCal blackout that covers the current time (yesterday 00:00Z to two days
+# from now). The hook reads the clock itself, so end-to-end hook tests need a window
+# around "now"; the static fixtures/blocked.ics only covers 2026-04-22 and is for the
+# adapter tests, which pass --ts explicitly.
+write_current_blackout_ics() {
+    local path="$1"
+    python3 - "$path" <<'PY'
+import sys
+from datetime import datetime, timedelta, timezone
+
+today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+fmt = "%Y%m%dT%H%M%SZ"
+start = (today - timedelta(days=1)).strftime(fmt)
+end = (today + timedelta(days=2)).strftime(fmt)
+with open(sys.argv[1], "w", encoding="utf-8", newline="") as fh:
+    fh.write(
+        "BEGIN:VCALENDAR\n"
+        "VERSION:2.0\n"
+        "PRODID:-//acme-test//change-window-test//EN\n"
+        "BEGIN:VEVENT\n"
+        "UID:blocked-current-001@acme-test\n"
+        f"DTSTART:{start}\n"
+        f"DTEND:{end}\n"
+        "SUMMARY:Production freeze (synthetic)\n"
+        "DESCRIPTION:Synthetic test fixture - blackout around the current time\n"
+        "END:VEVENT\n"
+        "END:VCALENDAR\n"
+    )
+PY
+}
+
 # write_profile_yaml <sandbox> <customer-id> <adapter> [source-path] [timezone]
 # Writes a valid synthetic profile YAML to $sandbox/profiles/<customer-id>.yaml.
 # Also writes a state.json so resolve-customer.sh Tier 3 can find the customer.

@@ -38,5 +38,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+      # Install the locked prettier and markdownlint-cli so this check uses the same versions as
+      # the autofix workflow; a bare npx pulls the newest release, which can disagree with them.
+      - run: npm ci --no-audit --no-fund
       - run: npx --yes markdownlint-cli "**/*.md" --ignore-path .markdownlintignore
       - run: npx --yes prettier --check "**/*.{md,mdx,json,jsonc,yaml,yml}"

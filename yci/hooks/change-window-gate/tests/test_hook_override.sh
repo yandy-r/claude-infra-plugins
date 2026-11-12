@@ -4,7 +4,6 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 
-BLOCKED_FIXTURE="$(fixture_path "blocked.ics")"
 
 # ---------------------------------------------------------------------------
 # Test: override with ical profile that would block → allow
@@ -14,7 +13,8 @@ test_override_bypasses_ical_block() {
     local sandbox="${sb}/data"
     mkdir -p "${sandbox}/profiles"
 
-    write_profile_yaml "$sandbox" "acme-test" "ical" "$BLOCKED_FIXTURE" "UTC"
+    write_current_blackout_ics "${sandbox}/blocked.ics"
+    write_profile_yaml "$sandbox" "acme-test" "ical" "${sandbox}/blocked.ics" "UTC"
     export YCI_DATA_ROOT="$sandbox"
     export YCI_CUSTOMER="acme-test"
     export YCI_CWG_OVERRIDE=1
