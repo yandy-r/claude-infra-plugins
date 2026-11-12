@@ -1,20 +1,17 @@
 ---
-
 name: customer-guard
 description:
-Ad-hoc cross-customer isolation check. Runs the customer-isolation detection library against a
-single path or text blob and reports allow/deny with the same catalogued errors as the PreToolUse
-hook. Useful for validating pastes and test fixtures before running a tool that would otherwise
-trigger the guard.
+  Ad-hoc cross-customer isolation check. Runs the customer-isolation detection library against a
+  single path or text blob and reports allow/deny with the same catalogued errors as the PreToolUse
+  hook. Useful for validating pastes and test fixtures before running a tool that would otherwise
+  trigger the guard.
 argument-hint: "<path-or-text> [--dry-run] [--data-root <path>]"
 allowed-tools:
-
-- Read
-- Bash(cat:*)
-- Bash(test:*)
-- Bash(bash:*)
-- Bash(python3:*)
-
+  - Read
+  - Bash(cat:*)
+  - Bash(test:*)
+  - Bash(bash:*)
+  - Bash(python3:*)
 ---
 
 # yci:customer-guard Skill

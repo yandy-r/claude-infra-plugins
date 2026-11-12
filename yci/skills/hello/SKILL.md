@@ -1,10 +1,9 @@
 ---
-
 name: hello
 description:
-"Proof-of-life skill for the yci plugin — confirms the skill pipeline resolves end-to-end. Prints
-a one-line greeting from yci. Phase 0; replaced by yci:whoami when the customer-profile machinery
-lands."
+  "Proof-of-life skill for the yci plugin — confirms the skill pipeline resolves end-to-end. Prints
+  a one-line greeting from yci. Phase 0; replaced by yci:whoami when the customer-profile machinery
+  lands."
 ---
 
 # yci:hello — Proof-of-Life

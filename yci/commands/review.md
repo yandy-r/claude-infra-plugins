@@ -1,17 +1,14 @@
 ---
-
 description:
-Produce a dual-branded network change review deliverable (blast radius, rollback plan, pre/post
-checks, evidence stub) for the active customer.
+  Produce a dual-branded network change review deliverable (blast radius, rollback plan, pre/post
+  checks, evidence stub) for the active customer.
 argument-hint: "<change-path> [--data-root <path>] [--customer <name>] [--format <fmt>]"
 allowed-tools:
-
-- Read
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(cat:*)
-- Bash(test:*)
-
+  - Read
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(cat:*)
+  - Bash(test:*)
 ---
 
 # /yci:review

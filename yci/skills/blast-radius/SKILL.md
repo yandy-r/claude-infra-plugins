@@ -1,29 +1,26 @@
 ---
-
 name: blast-radius
 description:
-Produce a typed blast-radius label (tenants, services, devices, dependencies, downstream
-consumers, RTO band, confidence, coverage gaps) for a proposed change against the active
-customer's inventory. Use when the user runs /yci:blast-radius, asks "what breaks if I change X",
-needs impact analysis before a CAB submission, or needs the structured JSON label consumed by
-yci:network-change-review, yci:mop, yci:evidence-bundle, and the change-window-gate hook. Reads
-the active customer profile's inventory.adapter (file minimum; netbox stub).
+  Produce a typed blast-radius label (tenants, services, devices, dependencies, downstream
+  consumers, RTO band, confidence, coverage gaps) for a proposed change against the active
+  customer's inventory. Use when the user runs /yci:blast-radius, asks "what breaks if I change X",
+  needs impact analysis before a CAB submission, or needs the structured JSON label consumed by
+  yci:network-change-review, yci:mop, yci:evidence-bundle, and the change-window-gate hook. Reads
+  the active customer profile's inventory.adapter (file minimum; netbox stub).
 argument-hint:
-"[--change-file <path>] [--format json|markdown|both] [--output <path>] [--adapter <name>]
-[--data-root <path>]"
+  "[--change-file <path>] [--format json|markdown|both] [--output <path>] [--adapter <name>]
+  [--data-root <path>]"
 allowed-tools:
-
-- Read
-- Write
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(cat:*)
-- Bash(test:*)
-- Bash(mkdir:*)
-- Bash(python3:*)
-- Bash(sha256sum:*)
-
+  - Read
+  - Write
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(cat:*)
+  - Bash(test:*)
+  - Bash(mkdir:*)
+  - Bash(python3:*)
+  - Bash(sha256sum:*)
 ---
 
 # yci:blast-radius Skill

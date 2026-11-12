@@ -1,27 +1,24 @@
 ---
-
 name: mop
 description:
-Generate a customer-deliverable Method of Procedure artifact for the active customer from a
-reviewed change input. Produces dual-branded markdown with pre-change state capture, apply
-commands, post-change validation, rollback commands, abort criteria, and blast-radius context. Use
-when the user runs /yci:mop, asks for a MOP/runbook/method-of-procedure, or needs a change handoff
-document without auto-applying anything.
+  Generate a customer-deliverable Method of Procedure artifact for the active customer from a
+  reviewed change input. Produces dual-branded markdown with pre-change state capture, apply
+  commands, post-change validation, rollback commands, abort criteria, and blast-radius context. Use
+  when the user runs /yci:mop, asks for a MOP/runbook/method-of-procedure, or needs a change handoff
+  document without auto-applying anything.
 argument-hint:
-"<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>]
-[--output-dir <path>]"
+  "<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>]
+  [--output-dir <path>]"
 allowed-tools:
-
-- Read
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/mop/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/telemetry-sanitizer/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/customer-isolation/detect.sh:*)
-- Bash(cat|mkdir|test|cp|date|python3|mktemp|rm:*)
-
+  - Read
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/mop/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/telemetry-sanitizer/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/customer-isolation/detect.sh:*)
+  - Bash(cat|mkdir|test|cp|date|python3|mktemp|rm:*)
 ---
 
 # mop
