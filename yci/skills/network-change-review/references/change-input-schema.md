@@ -35,12 +35,7 @@ this envelope as its canonical input contract.
   "diff_kind": "unified-diff | structured-yaml | playbook",
   "raw": "<original file contents as string>",
   "summary": "<one-line human-readable summary>",
-  "targets": [
-    {
-      "kind": "device | service | tenant | dependency | unknown",
-      "id": "<string>"
-    }
-  ]
+  "targets": [{ "kind": "device | service | tenant | dependency | unknown", "id": "<string>" }]
 }
 ```
 

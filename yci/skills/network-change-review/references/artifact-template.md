@@ -132,7 +132,6 @@ for illustration; real artifacts contain full subagent output.
 
 ```markdown
 ---
-
 ## Customer Branding
 
 **WIDGET CORP** — Internal IT Change Management

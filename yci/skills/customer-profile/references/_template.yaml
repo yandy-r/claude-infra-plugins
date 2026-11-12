@@ -42,6 +42,7 @@ compliance:
   #   key_ref: "<TODO: signing key reference or path>"
   #   identity: "<TODO: required when method=ssh-keygen-y-sign>"
   #   pubkey: "<TODO: optional verifier reference included in bundle metadata>"
+
 # change_window:
 #   adapter: "<TODO: ical|servicenow-cab|json-schedule|always-open|none>"
 #   source: "<TODO: path or URL to calendar source>"
@@ -57,6 +58,7 @@ approval:
   adapter: "<TODO: github-pr|email-signoff|jira|servicenow-request|none>"
   # endpoint: "<TODO: API base URL — adapter-dependent>"
   # credential_ref: "<TODO: vault path — NEVER an inline secret>"
+
 # vaults:
 #   path: "<TODO: vault URI or path — NEVER an inline secret>"
 #   # Common path patterns:
@@ -78,6 +80,7 @@ deliverable:
   #   ~/gdrive/Acme/deliverables/         (rclone or Google Drive for Desktop)
   #   /Volumes/Acme-NAS/deliverables/     (shared network drive)
   #   ~/Encrypted-Customers/acme/         (separate encrypted volume)
+
 # vendor_tooling:
 #   - vendor: "<TODO: e.g. cisco>"
 #     product: "<TODO: e.g. ios-xe>"

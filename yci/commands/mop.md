@@ -1,18 +1,15 @@
 ---
-
 description:
-Produce a dual-branded Method of Procedure deliverable for the active customer from a reviewed
-change input.
+  Produce a dual-branded Method of Procedure deliverable for the active customer from a reviewed
+  change input.
 argument-hint:
-"<change-path> [--data-root <path>] [--customer <name>] [--adapter <regime>] [--format <fmt>]
-[--output-dir <path>]"
+  "<change-path> [--data-root <path>] [--customer <name>] [--adapter <regime>] [--format <fmt>]
+  [--output-dir <path>]"
 allowed-tools:
-
-- Read
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/mop/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(test:*)
-
+  - Read
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/mop/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(test:*)
 ---
 
 # /yci:mop

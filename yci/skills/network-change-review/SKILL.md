@@ -1,30 +1,27 @@
 ---
-
 name: network-change-review
 description:
-'Produce a full network-change review artifact (change plan, diff review, blast-radius, rollback,
-pre/post checklists, compliance evidence stub) for the active customer. Use when the user runs
-/yci:review <change>, asks to "review a network change", needs a customer-deliverable change
-document, or is preparing a CAB submission or MOP handoff. Composes ycc:planner and
-yci:change-reviewer via the Agent tool for the change-plan and diff-review sections, then invokes
-the review.sh orchestrator for all remaining sections.'
+  'Produce a full network-change review artifact (change plan, diff review, blast-radius, rollback,
+  pre/post checklists, compliance evidence stub) for the active customer. Use when the user runs
+  /yci:review <change>, asks to "review a network change", needs a customer-deliverable change
+  document, or is preparing a CAB submission or MOP handoff. Composes ycc:planner and
+  yci:change-reviewer via the Agent tool for the change-plan and diff-review sections, then invokes
+  the review.sh orchestrator for all remaining sections.'
 argument-hint:
-"<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>]
-[--output-dir <path>]"
+  "<change-path> [--customer <name>] [--data-root <path>] [--adapter <regime>] [--format <format>]
+  [--output-dir <path>]"
 allowed-tools:
-
-- Read
-- Write
-- Agent
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/telemetry-sanitizer/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/customer-isolation/detect.sh:*)
-- Bash(git:*)
-- Bash(cat|test|mkdir|python3|sha256sum|cp|rm|mktemp:*)
-
+  - Read
+  - Write
+  - Agent
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/network-change-review/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/blast-radius/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/telemetry-sanitizer/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/customer-isolation/detect.sh:*)
+  - Bash(git:*)
+  - Bash(cat|test|mkdir|python3|sha256sum|cp|rm|mktemp:*)
 ---
 
 # network-change-review

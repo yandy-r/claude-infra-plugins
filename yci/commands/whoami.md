@@ -1,16 +1,13 @@
 ---
-
 description:
-Print the active yci customer (id, display name, engagement, compliance regime, safety posture).
+  Print the active yci customer (id, display name, engagement, compliance regime, safety posture).
 argument-hint: "[--data-root <path>]"
 allowed-tools:
-
-- Read
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(cat:*)
-- Bash(test:*)
-
+  - Read
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(cat:*)
+  - Bash(test:*)
 ---
 
 # /yci:whoami

@@ -1,22 +1,19 @@
 ---
-
 name: evidence-bundle
 description:
-Assemble a signed, compliance-adaptive evidence bundle for the active customer from an evidence
-stub plus supplemental execution metadata. Use when the user runs /yci:evidence, needs a
-handoff-ready evidence pack, or wants to package approvals, diffs, pre/post state, operator
-identity, and tenant scope under the active compliance adapter.
+  Assemble a signed, compliance-adaptive evidence bundle for the active customer from an evidence
+  stub plus supplemental execution metadata. Use when the user runs /yci:evidence, needs a
+  handoff-ready evidence pack, or wants to package approvals, diffs, pre/post state, operator
+  identity, and tenant scope under the active compliance adapter.
 argument-hint:
-"--evidence-stub <path> --manifest <path> [--profile-json <path>] [--customer <name>] [--data-root
-<path>] [--output-dir <path>] [--adapter <regime>]"
+  "--evidence-stub <path> --manifest <path> [--profile-json <path>] [--customer <name>] [--data-root
+  <path>] [--output-dir <path>] [--adapter <regime>]"
 allowed-tools:
-
-- Read
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/evidence-bundle/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
-- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
-- Bash(cat|mkdir|test|python3|cp|date:*)
-
+  - Read
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/evidence-bundle/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
+  - Bash(cat|mkdir|test|python3|cp|date:*)
 ---
 
 # evidence-bundle

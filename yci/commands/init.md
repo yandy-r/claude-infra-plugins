@@ -3,8 +3,8 @@ description: Scaffold a new yci customer profile from _template.yaml.
 argument-hint: "<customer> [--data-root <path>] [--force] [--allow-reserved]"
 allowed-tools:
   - Read
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
   - Bash(cat:*)
   - Bash(ls:*)
   - Bash(test:*)
