@@ -1,16 +1,19 @@
 ---
+
 description:
-  Assemble a signed evidence bundle for the active customer from an evidence stub plus supplemental
-  execution metadata.
+Assemble a signed evidence bundle for the active customer from an evidence stub plus supplemental
+execution metadata.
 argument-hint:
-  "--evidence-stub <path> --manifest <path> [--customer <name>] [--data-root <path>] [--output-dir
-  <path>] [--adapter <regime>]"
+"--evidence-stub <path> --manifest <path> [--customer <name>] [--data-root <path>] [--output-dir
+<path>] [--adapter <regime>]"
 allowed-tools:
-  - Read
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/evidence-bundle/scripts/*.sh:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
-  - Bash(test:*)
+
+- Read
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/evidence-bundle/scripts/_.sh:_)
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
+- Bash(test:*)
+
 ---
 
 # /yci:evidence

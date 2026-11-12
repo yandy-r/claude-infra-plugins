@@ -1,24 +1,27 @@
 ---
+
 name: customer-profile
 description:
-  Load, switch, and scaffold yci customer profiles. Use when the user runs /yci:switch, /yci:whoami,
-  or /yci:init — or asks to see/change/create the active customer context. Resolves the active
-  customer via the 4-tier precedence chain ($YCI_CUSTOMER > .yci-customer dotfile > MRU > refuse)
-  and persists state to <data-root>/state.json. All downstream yci skills depend on this one — it is
-  the load-bearing primitive for customer isolation.
+Load, switch, and scaffold yci customer profiles. Use when the user runs /yci:switch, /yci:whoami,
+or /yci:init — or asks to see/change/create the active customer context. Resolves the active
+customer via the 4-tier precedence chain ($YCI_CUSTOMER > .yci-customer dotfile > MRU > refuse)
+and persists state to <data-root>/state.json. All downstream yci skills depend on this one — it is
+the load-bearing primitive for customer isolation.
 argument-hint: "{switch|whoami|init} [<customer>] [--data-root <path>] [--force] [--allow-reserved]"
 allowed-tools:
-  - Read
-  - Write
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/*.sh:*)
-  - Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/*.sh:*)
-  - Bash(cat:*)
-  - Bash(ls:*)
-  - Bash(test:*)
-  - Bash(python3:*)
-  - Bash(mkdir:*)
-  - Bash(cp:*)
-  - Bash(chmod:*)
+
+- Read
+- Write
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/_.sh:_)
+- Bash(${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/_.sh:_)
+- Bash(cat:*)
+- Bash(ls:*)
+- Bash(test:*)
+- Bash(python3:*)
+- Bash(mkdir:*)
+- Bash(cp:*)
+- Bash(chmod:*)
+
 ---
 
 # yci:customer-profile Skill
