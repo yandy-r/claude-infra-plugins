@@ -59,7 +59,8 @@ claude-infra-plugins/
 
 - The plugin namespace `yci:` is stable and must NOT change.
 - Skills: `kebab-case` directory under `yci/skills/`. The directory name becomes the skill
-  identifier within the plugin's namespace (e.g., `yci/skills/hello/` → `yci:hello`).
+  identifier within the plugin's namespace (e.g., `yci/skills/customer-profile/` →
+  `yci:customer-profile`).
 - Commands: `kebab-case.md` under `yci/commands/`. The basename becomes the slash command (e.g.,
   `yci/commands/init.md` → `/yci:init`).
 - Agents: `kebab-case.md` under `yci/agents/`. The basename becomes the agent identifier (e.g.,

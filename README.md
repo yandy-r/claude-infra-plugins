@@ -18,8 +18,6 @@ engagements.
   identity, inventory adapter, compliance adapter, change-window adapter, safety posture).
 - **`yci:customer-guard`** — PreToolUse hook that fail-closes on cross-customer path / identifier
   collisions. Catalogued deny reasons; dry-run and fail-open env knobs for development.
-- **`yci:hello`** — Phase-0 proof-of-life skill (will be replaced by `yci:whoami` once the
-  customer-profile machinery lands end-to-end).
 - **Adapter patterns** — inventory (netbox stub), compliance (HIPAA / PCI / SOC2 / none),
   change-window (iCal / JSON-schedule / always-open / none). All under `yci/skills/_shared/`.
 - **Planned** (Phase 2+): `yci:blast-radius`, `yci:evidence-bundle`, `yci:network-change-review`,
@@ -69,8 +67,7 @@ claude-infra-plugins/
 │   ├── skills/
 │   │   ├── _shared/          # cross-skill helpers (customer-isolation, adapters, schema)
 │   │   ├── customer-profile/ # load / switch / init profiles
-│   │   ├── customer-guard/   # guard-check operator skill
-│   │   └── hello/            # Phase-0 proof-of-life
+│   │   └── customer-guard/   # guard-check operator skill
 │   ├── agents/               # (Phase 1+)
 │   ├── commands/             # (Phase 1+)
 │   └── docs/
