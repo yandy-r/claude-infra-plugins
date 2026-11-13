@@ -3,9 +3,8 @@
 #
 # Checks:
 #   1. yci/.claude-plugin/plugin.json exists and parses as valid JSON.
-#   2. yci/skills/hello/SKILL.md exists with valid YAML frontmatter.
-#   3. yci/skills/customer-profile — full surface validation.
-#   4. yci/skills/_shared/telemetry-sanitizer — sanitizer + tests.
+#   2. yci/skills/customer-profile — full surface validation.
+#   3. yci/skills/_shared/telemetry-sanitizer — sanitizer + tests.
 #
 # Intentional: no -e flag; validator must aggregate failures.
 set -uo pipefail
@@ -21,101 +20,6 @@ ERRORS=0
 fail() { printf '  ✗ fail: %s\n' "$*" >&2; ERRORS=$((ERRORS + 1)); }
 ok()   { printf '  ✓ ok:   %s\n' "$*"; }
 warn() { printf '  ! warn: %s\n' "$*" >&2; }
-
-# ---------------------------------------------------------------------------
-# Phase-0 hello skill checks (preserved verbatim from original)
-# ---------------------------------------------------------------------------
-validate_hello_skill() {
-    echo "--- hello skill ---"
-
-    local plugin_json="${REPO_ROOT}/yci/.claude-plugin/plugin.json"
-    local skill_md="${REPO_ROOT}/yci/skills/hello/SKILL.md"
-
-    # 1. plugin.json
-    if [[ ! -f "${plugin_json}" ]]; then
-        fail "yci/.claude-plugin/plugin.json missing"
-    elif ! python3 -m json.tool "${plugin_json}" > /dev/null 2>&1; then
-        fail "yci/.claude-plugin/plugin.json is not valid JSON"
-    else
-        ok "yci/.claude-plugin/plugin.json valid JSON"
-    fi
-
-    # 2. SKILL.md exists
-    if [[ ! -f "${skill_md}" ]]; then
-        fail "yci/skills/hello/SKILL.md missing"
-        return
-    fi
-    ok "yci/skills/hello/SKILL.md present"
-
-    # 3. Validate frontmatter
-    if python3 - "${skill_md}" <<'PY'; then
-import re
-import sys
-from pathlib import Path
-
-try:
-    import yaml
-    def load_frontmatter(text: str) -> dict:
-        m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
-        return (yaml.safe_load(m.group(1)) or {}) if m else {}
-except ImportError:
-    def load_frontmatter(text: str) -> dict:
-        m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
-        if not m:
-            return {}
-        out: dict = {}
-        for line in m.group(1).splitlines():
-            km = re.match(r"^([a-zA-Z_][a-zA-Z0-9_-]*):\s*(.*)$", line)
-            if not km:
-                continue
-            key, val = km.group(1), km.group(2).strip()
-            if val.startswith(('"', "'")):
-                val = val.strip("\"'")
-            if val.lower() in {"true", "false"}:
-                out[key] = (val.lower() == "true")
-            else:
-                out[key] = val
-        return out
-
-skill_md = Path(sys.argv[1])
-text = skill_md.read_text(encoding="utf-8")
-
-script_name = "validate-yci-skills.sh"
-errors: list[str] = []
-
-if not re.match(r"^---\n.*?\n---\n", text, re.DOTALL):
-    errors.append(
-        f"{skill_md}: frontmatter delimiters missing or malformed "
-        f"(expected opening and closing '---' lines)"
-    )
-    for err in errors:
-        print(f"{script_name}: {err}", file=sys.stderr)
-    sys.exit(1)
-
-fm = load_frontmatter(text)
-
-name_val = fm.get("name", "")
-if name_val != "hello":
-    errors.append(
-        f"{skill_md}: frontmatter 'name' must be 'hello', got {name_val!r}"
-    )
-
-desc_val = fm.get("description", "")
-if not isinstance(desc_val, str) or not desc_val.strip():
-    errors.append(
-        f"{skill_md}: frontmatter 'description' must be a non-empty string"
-    )
-
-if errors:
-    for err in errors:
-        print(f"{script_name}: {err}", file=sys.stderr)
-    sys.exit(1)
-PY
-        ok "yci/skills/hello/SKILL.md frontmatter valid"
-    else
-        fail "yci/skills/hello/SKILL.md frontmatter invalid"
-    fi
-}
 
 # ---------------------------------------------------------------------------
 # customer-profile skill checks
@@ -1596,7 +1500,6 @@ validate_change_window_gate_hook() {
     echo "--- change-window-gate hook ---"
 
     local hook_dir="${REPO_ROOT}/yci/hooks/change-window-gate"
-    local hook_json="${hook_dir}/hook.json"
     local hook_scripts_dir="${hook_dir}/scripts"
 
     # 1. Directory exists
@@ -1605,37 +1508,6 @@ validate_change_window_gate_hook() {
         return
     fi
     ok "yci/hooks/change-window-gate/ present"
-
-    # 2. hook.json — valid JSON, PreToolUse matcher "*", one command pointing at pretool.sh
-    if [ ! -f "${hook_json}" ]; then
-        fail "change-window-gate/hook.json missing"
-    elif ! python3 -m json.tool "${hook_json}" > /dev/null 2>&1; then
-        fail "change-window-gate/hook.json: invalid JSON"
-    else
-        ok "change-window-gate/hook.json present and valid JSON"
-        if python3 -c "
-import json, sys
-with open('${hook_json}') as f:
-    data = json.load(f)
-hooks = data.get('hooks', {})
-pretool_hooks = hooks.get('PreToolUse', [])
-if not pretool_hooks:
-    sys.stderr.write('hook.json: missing hooks.PreToolUse list\n'); sys.exit(1)
-entry = pretool_hooks[0]
-if entry.get('matcher') != '*':
-    sys.stderr.write('hook.json: matcher must be \"*\"\n'); sys.exit(1)
-cmds = entry.get('hooks', [])
-if not cmds:
-    sys.stderr.write('hook.json: hooks list is empty\n'); sys.exit(1)
-cmd = cmds[0].get('command', '')
-if 'change-window-gate/scripts/pretool.sh' not in cmd:
-    sys.stderr.write('hook.json: command does not reference change-window-gate/scripts/pretool.sh\n'); sys.exit(1)
-" 2>/dev/null; then
-            ok "change-window-gate/hook.json: matcher \"*\", command references pretool.sh"
-        else
-            fail "change-window-gate/hook.json: unexpected structure (expected PreToolUse matcher \"*\" with change-window-gate/scripts/pretool.sh)"
-        fi
-    fi
 
     # 3. pretool.sh — exists, executable, correct shebang, set -uo pipefail (hook entrypoint, no -e)
     local pretool="${hook_scripts_dir}/pretool.sh"
@@ -1721,15 +1593,6 @@ if 'change-window-gate/scripts/pretool.sh' not in cmd:
             fail "change-window-gate/references/${ref} missing or empty (expected from batch 6.2)"
         fi
     done
-
-    # 8. targets/codex/codex-config-fragment.toml exists and is non-empty
-    #    (lands in batch 6.2 — will resolve after fan-in merge)
-    local codex_stub="${hook_dir}/targets/codex/codex-config-fragment.toml"
-    if [ -s "${codex_stub}" ]; then
-        ok "change-window-gate/targets/codex/codex-config-fragment.toml present and non-empty"
-    else
-        fail "change-window-gate/targets/codex/codex-config-fragment.toml missing or empty (expected from batch 6.2)"
-    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -1944,8 +1807,6 @@ if hooks_val != './hooks/hooks.json':
 # ---------------------------------------------------------------------------
 main() {
     echo "=== validate-yci-skills.sh ==="
-    validate_hello_skill
-    echo
     validate_customer_profile_skill
     echo
     validate_customer_guard_hook

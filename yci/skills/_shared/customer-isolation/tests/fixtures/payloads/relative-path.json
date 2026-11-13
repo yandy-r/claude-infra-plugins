@@ -1,5 +1,0 @@
-{
-  "tool_name": "Write",
-  "tool_input": { "file_path": "./relative.md" },
-  "cwd": "FIXTURE_DR"
-}

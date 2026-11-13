@@ -54,15 +54,11 @@ will be advisory documentation, not executed config.
 
 **Verdict**: `unsupported`
 
-**Ships in this PR**: A comment-only TOML advisory stub
-(`yci/hooks/change-window-gate/targets/codex/codex-config-fragment.toml`) that reserves the fragment
-name and documents the deferred wiring intent. No executable TOML keys are emitted.
+**Ships in this PR**: No Codex config fragment. Codex is documented here only.
 
 **Deferred to**: Phase 1b — if/when Codex GAs `features.codex_hooks` (currently `unsupported` per
-the target-capability-matrix research audit of April 2026), the advisory stub will be promoted to a
-real TOML config snippet wiring `pretool.sh` to the PreToolUse-equivalent event.
-
-**Stub path**: `yci/hooks/change-window-gate/targets/codex/codex-config-fragment.toml`
+the target-capability-matrix research audit of April 2026), a real TOML config snippet wiring
+`pretool.sh` to the PreToolUse-equivalent event will be added.
 
 ---
 
