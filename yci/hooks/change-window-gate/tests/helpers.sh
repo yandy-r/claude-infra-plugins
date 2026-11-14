@@ -74,14 +74,6 @@ assert_contains() {
     esac
 }
 
-assert_not_contains() {
-    local haystack="$1" needle="$2" name="${3:-assert_not_contains}"
-    case "$haystack" in
-        *"$needle"*) _yci_test_report FAIL "$name" "unexpected '$needle' found in output" ;;
-        *)           _yci_test_report PASS "$name" ;;
-    esac
-}
-
 assert_exit() {
     local expected="$1" got="$2" name="${3:-assert_exit}"
     if [ "$got" = "$expected" ]; then
@@ -100,15 +92,6 @@ assert_file_exists() {
     fi
 }
 
-assert_json_valid() {
-    local path="$1" name="${2:-assert_json_valid}"
-    if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$path" 2>/dev/null; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "invalid JSON in: $path"
-    fi
-}
-
 assert_decision() {
     # assert_decision <decision_json_string> <expected_decision> [name]
     local json="$1" expected="$2" name="${3:-assert_decision}"
@@ -123,25 +106,6 @@ assert_decision_contains() {
     local rationale
     rationale="$(printf '%s' "$json" | python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(d.get("rationale","") + " " + d.get("adapter",""))' 2>/dev/null)" || rationale="$json"
     assert_contains "$rationale" "$substr" "$name"
-}
-
-assert_hook_allows() {
-    # assert_hook_allows <stdin-json> [name]
-    local payload="$1" name="${2:-assert_hook_allows}"
-    local stdout rc
-    stdout="$(printf '%s' "$payload" | bash "${YCI_CWG_SCRIPTS_DIR}/pretool.sh" 2>/dev/null)"; rc=$?
-    assert_exit 0 "$rc" "${name}:exit"
-    assert_eq "$stdout" "" "${name}:stdout-empty"
-}
-
-assert_hook_denies() {
-    # assert_hook_denies <stdin-json> <rationale-substr> [name]
-    local payload="$1" rationale_substr="$2" name="${3:-assert_hook_denies}"
-    local stdout rc
-    stdout="$(printf '%s' "$payload" | bash "${YCI_CWG_SCRIPTS_DIR}/pretool.sh" 2>/dev/null)"; rc=$?
-    assert_exit 0 "$rc" "${name}:exit"
-    assert_contains "$stdout" '"permissionDecision": "deny"' "${name}:deny-json"
-    assert_contains "$stdout" "$rationale_substr" "${name}:rationale"
 }
 
 # ---------------------------------------------------------------------------
@@ -281,24 +245,6 @@ EOF
 # ---------------------------------------------------------------------------
 # Hook runner
 # ---------------------------------------------------------------------------
-
-# run_hook <stdin-json>
-# Invokes pretool.sh from the worktree root, passing the JSON payload on stdin.
-# Sets _HOOK_STDOUT, _HOOK_STDERR, _HOOK_RC in caller scope.
-run_hook() {
-    local payload="$1"
-    local _out_file _err_file
-    _out_file="$(mktemp)"
-    _err_file="$(mktemp)"
-
-    _HOOK_RC=0
-    printf '%s' "$payload" | bash "${YCI_CWG_SCRIPTS_DIR}/pretool.sh" \
-        >"$_out_file" 2>"$_err_file" || _HOOK_RC=$?
-
-    _HOOK_STDOUT="$(< "$_out_file")"
-    _HOOK_STDERR="$(< "$_err_file")"
-    rm -f "$_out_file" "$_err_file"
-}
 
 # ---------------------------------------------------------------------------
 # Sandbox wrapper (mirrors customer-guard pattern)

@@ -78,14 +78,6 @@ assert_contains() {
     esac
 }
 
-assert_not_contains() {
-    local haystack="$1" needle="$2" name="${3:-assert_not_contains}"
-    case "$haystack" in
-        *"$needle"*) _yci_test_report FAIL "$name" "unexpected '$needle' found in output" ;;
-        *)           _yci_test_report PASS "$name" ;;
-    esac
-}
-
 assert_exit() {
     local expected="$1" got="$2" name="${3:-assert_exit}"
     if [ "$got" = "$expected" ]; then
@@ -112,33 +104,6 @@ assert_json_valid() {
     else
         _yci_test_report FAIL "$name" "invalid JSON in: $path"
     fi
-}
-
-assert_error_id() {
-    # Match emitted stderr against the canonical message for <id> in error-messages.md.
-    # Matching is lenient: we check that a distinctive phrase from the catalog appears.
-    local id="$1" stderr_content="$2" name="${3:-assert_error_id}"
-    local refs_md="${YCI_REFS_DIR}/error-messages.md"
-    if [ ! -f "$refs_md" ]; then
-        _yci_test_report FAIL "$name" "error-messages.md not found at $refs_md"
-        return
-    fi
-    # Extract the first code-block line inside the entry for this id.
-    local phrase
-    phrase="$(awk -v id="$id" '
-        /^### `/ { in_id = ($0 ~ id) ? 1 : 0 }
-        in_id && /^- \*\*ID\*\*:/ { found_id=1 }
-        found_id && /^```$/ { in_block=!in_block; next }
-        found_id && in_block { print; exit }
-    ' "$refs_md" | sed 's/[<>].*//' | head -1 | tr -d '\n')"
-    if [ -z "$phrase" ]; then
-        _yci_test_report FAIL "$name" "error catalog has no extractable phrase for id '$id'"
-        return
-    fi
-    case "$stderr_content" in
-        *"$phrase"*) _yci_test_report PASS "$name" ;;
-        *)           _yci_test_report FAIL "$name" "expected phrase '$phrase' not in stderr for id '$id'" ;;
-    esac
 }
 
 # ---------------------------------------------------------------------------

@@ -86,9 +86,3 @@ def load_adapter_rules(paths: list[Path]) -> list[AdapterRule]:
     for p in paths:
         all_rules.extend(parse_rules_file(p, default_name=p.stem))
     return all_rules
-
-
-def adapter_rules_to_specs(
-    rules: list[AdapterRule],
-) -> list[tuple[str, re.Pattern[str], str | Callable[[re.Match[str]], str]]]:
-    return [(r.name, r.pattern, r.replacement) for r in rules]

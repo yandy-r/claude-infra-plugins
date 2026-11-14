@@ -52,14 +52,6 @@ YCI_ADAPTER_SCHEMA_EXEMPT=(
   none
 )
 
-# Current evidence schema version shipped by the commercial adapter.
-# Bump when commercial/evidence-schema.json changes shape.
-YCI_ADAPTER_COMMERCIAL_SCHEMA_VERSION=1
-
-# Current evidence schema version for the regulated adapters shipped by issue
-# #34. Bump when any of those adapters' evidence-schema.json files change shape.
-YCI_ADAPTER_REGULATED_SCHEMA_VERSION=1
-
 # yci_adapter_is_schema_exempt <regime>
 #
 # Prints nothing. Returns 0 if <regime> is in YCI_ADAPTER_SCHEMA_EXEMPT, else 1.

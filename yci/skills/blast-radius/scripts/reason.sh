@@ -149,14 +149,11 @@ for tgt in targets:
         else:
             add_gap("unknown-device", f"interface '{tid}' parent device '{parent}' not in inventory")
     elif kind == "vlan":
-        matched = False
         for dev in inv.get("devices", []):
             vlans = dev.get("vlans") or []
             if tid in [str(v) for v in vlans]:
                 add_direct_device(dev["id"])
-                matched = True
         # vlans legitimately may match nothing — no gap
-        _ = matched
     elif kind == "arn":
         matched = False
         for svc in inv.get("services", []):
@@ -192,7 +189,6 @@ def record_edge(frm: str, to: str, tp: str) -> None:
 
 frontier = list(distance.keys())
 depth = 0
-depth_cap_hit = False
 
 while frontier and depth < BFS_MAX_DEPTH:
     depth += 1
@@ -231,9 +227,7 @@ while frontier and depth < BFS_MAX_DEPTH:
     frontier = next_frontier
 
 if depth >= BFS_MAX_DEPTH and frontier:
-    depth_cap_hit = True
     add_gap("orphan-edge", "BFS depth cap (5) reached — graph may have cycles or exceed 5 hops")
-_ = depth_cap_hit
 
 # --- orphan-edge detection (endpoints absent from inventory) ----------------
 known_ids = set(services_by_id) | set(devices_by_id) | set(tenants_by_id)

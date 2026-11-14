@@ -36,7 +36,7 @@ if [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
 fi
 
 # Source change-window-adapter-schema.sh — provides YCI_CW_ADAPTERS_SHIPPED,
-# YCI_CW_ADAPTERS_DEFERRED, YCI_CW_ADAPTER_REQUIRED_FILES, and helpers.
+# YCI_CW_ADAPTERS_DEFERRED, and YCI_CW_ADAPTER_REQUIRED_FILES.
 # Falls back to built-in defaults mirroring change-window-adapter-schema.sh exactly,
 # so the loader remains safe if the library is ever missing.
 # shellcheck source=./change-window-adapter-schema.sh

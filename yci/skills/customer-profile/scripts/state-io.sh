@@ -8,7 +8,6 @@
 #   state_read            <data-root>
 #   state_get_active      <data-root>
 #   state_write_active    <data-root> <customer-id>
-#   state_push_mru        <data-root> <customer-id> [--cap N]
 
 # Do NOT set -euo pipefail at file scope — that breaks sourcing scripts that
 # don't expect strict mode. Callers enable strict mode themselves.
@@ -147,47 +146,6 @@ mru = [m for m in data.get("mru", []) if isinstance(m, str) and m != customer]
 mru.insert(0, customer)
 mru = mru[:cap]
 out = {"active": customer, "mru": mru, "updated_at": now}
-print(json.dumps(out, indent=2, sort_keys=True))
-PY
-)"
-    _yci_state_write_atomic "$data_root" "$body"
-}
-
-# state_push_mru <data-root> <customer-id> [--cap N]
-# Pushes <customer-id> to front of .mru (dedupe, cap N; default 20). Does NOT change .active.
-# Atomic write. Exit 3 on permission-denied.
-state_push_mru() {
-    local data_root="${1:?state_push_mru requires <data-root>}"
-    local customer_id="${2:?state_push_mru requires <customer-id>}"
-    shift 2
-    local cap="$YCI_STATE_MRU_DEFAULT_CAP"
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            --cap) cap="${2:-$YCI_STATE_MRU_DEFAULT_CAP}"; shift 2 ;;
-            --cap=*) cap="${1#*=}"; shift ;;
-            *)
-                printf "yci: state_push_mru: unknown argument: '%s'\n" "$1" >&2
-                return 1
-                ;;
-        esac
-    done
-    local now; now="$(_yci_state_iso_now)"
-    local current; current="$(state_read "$data_root" 2>/dev/null)" || current='{"active":null,"mru":[]}'
-    local body
-    # Pass current JSON as argv[4] to avoid stdin conflict with the heredoc.
-    body="$(python3 - "$customer_id" "$now" "$cap" "$current" <<'PY'
-import json, sys
-customer, now, cap, current_json = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
-try:
-    data = json.loads(current_json)
-except Exception:
-    data = {"active": None, "mru": []}
-mru = [m for m in data.get("mru", []) if isinstance(m, str) and m != customer]
-mru.insert(0, customer)
-mru = mru[:cap]
-out = dict(data)
-out["mru"] = mru
-out["updated_at"] = now
 print(json.dumps(out, indent=2, sort_keys=True))
 PY
 )"
