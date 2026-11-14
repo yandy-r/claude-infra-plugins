@@ -27,15 +27,6 @@ _yci_test_report() {
     fi
 }
 
-assert_eq() {
-    local got="$1" expected="$2" name="${3:-assert_eq}"
-    if [ "$got" = "$expected" ]; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "got='$got' expected='$expected'"
-    fi
-}
-
 assert_contains() {
     local haystack="$1" needle="$2" name="${3:-assert_contains}"
     case "$haystack" in

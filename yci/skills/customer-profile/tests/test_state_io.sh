@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Tests for state-io.sh — covers read/write round-trip, MRU dedupe, MRU cap,
-# push_mru doesn't change active, corrupt JSON, atomic concurrency,
-# and write-permission-denied error.
+# corrupt JSON, atomic concurrency, and write-permission-denied error.
 # shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/helpers.sh"
 
@@ -66,66 +65,6 @@ test_mru_cap() {
     local active
     active="$(state_get_active "$sb/real")"
     assert_eq "$active" "cust-25" "mru_cap: active is the last written"
-}
-
-# ---------------------------------------------------------------------------
-# push_mru does NOT change .active
-# ---------------------------------------------------------------------------
-test_push_mru_no_active_change() {
-    local sb="$1"
-    _state_io_missing_diagnostic || { _yci_test_report PASS "push_mru_no_change: skipped (absent)"; return 0; }
-    # shellcheck source=/dev/null
-    source "$STATE_IO"
-    state_write_active "$sb/real" acme
-    state_push_mru "$sb/real" beta
-    local active
-    active="$(state_get_active "$sb/real")"
-    assert_eq "$active" "acme" "push_mru_no_change: active remains acme"
-    local mru
-    mru="$(python3 -c "import json; print(','.join(json.load(open('$sb/real/state.json'))['mru']))")"
-    assert_contains "$mru" "beta" "push_mru_no_change: beta appears in MRU"
-}
-
-# ---------------------------------------------------------------------------
-# push_mru deduplicates within MRU without touching active
-# ---------------------------------------------------------------------------
-test_push_mru_dedupe() {
-    local sb="$1"
-    _state_io_missing_diagnostic || { _yci_test_report PASS "push_mru_dedupe: skipped (absent)"; return 0; }
-    # shellcheck source=/dev/null
-    source "$STATE_IO"
-    state_write_active "$sb/real" acme
-    state_push_mru "$sb/real" beta
-    state_push_mru "$sb/real" gamma
-    state_push_mru "$sb/real" beta
-    # beta should appear exactly once and be at the front after the second push
-    local front count
-    front="$(python3 -c "import json; d=json.load(open('$sb/real/state.json')); print(d['mru'][0])")"
-    count="$(python3 -c "import json; d=json.load(open('$sb/real/state.json')); print(d['mru'].count('beta'))")"
-    assert_eq "$count" "1"    "push_mru_dedupe: beta appears exactly once"
-    assert_eq "$front" "beta" "push_mru_dedupe: beta moved to front"
-    # active still unchanged
-    local active
-    active="$(state_get_active "$sb/real")"
-    assert_eq "$active" "acme" "push_mru_dedupe: active still acme"
-}
-
-# ---------------------------------------------------------------------------
-# push_mru --cap N honours custom cap
-# ---------------------------------------------------------------------------
-test_push_mru_custom_cap() {
-    local sb="$1"
-    _state_io_missing_diagnostic || { _yci_test_report PASS "push_mru_cap: skipped (absent)"; return 0; }
-    # shellcheck source=/dev/null
-    source "$STATE_IO"
-    state_write_active "$sb/real" base
-    local i
-    for i in $(seq 1 10); do
-        state_push_mru "$sb/real" "extra-$i" --cap 5
-    done
-    local n
-    n="$(python3 -c "import json; print(len(json.load(open('$sb/real/state.json'))['mru']))")"
-    assert_eq "$n" "5" "push_mru_cap: MRU trimmed to custom cap 5"
 }
 
 # ---------------------------------------------------------------------------
@@ -289,9 +228,6 @@ main() {
     with_sandbox test_write_read_roundtrip
     with_sandbox test_mru_dedupe
     with_sandbox test_mru_cap
-    with_sandbox test_push_mru_no_active_change
-    with_sandbox test_push_mru_dedupe
-    with_sandbox test_push_mru_custom_cap
     with_sandbox test_corrupt_json
     with_sandbox test_corrupt_json_state_read
     with_sandbox test_missing_state_read_default

@@ -39,7 +39,6 @@ PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "${SCRIPT_DIR}/../../.." && pwd -P)}"
 python3 - "$input_path" "$PLUGIN_ROOT" <<'PYEOF' > "${output_path:-/dev/stdout}"
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys

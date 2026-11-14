@@ -162,20 +162,6 @@ print(v if v is not None else '')
     fi
 }
 
-assert_json_field_matches() {
-    local json_str="$1" field="$2" pattern="$3" name="${4:-assert_json_field_matches}"
-    if python3 -c "
-import json, re, sys
-d = json.loads(sys.argv[1])
-v = str(d.get(sys.argv[2], ''))
-sys.exit(0 if re.search(sys.argv[3], v) else 1)
-" "$json_str" "$field" "$pattern" >/dev/null 2>&1; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "field '$field' did not match pattern '$pattern'"
-    fi
-}
-
 assert_json_array_nonempty() {
     local json_str="$1" field="$2" name="${3:-assert_json_array_nonempty}"
     if python3 -c "
@@ -187,23 +173,6 @@ sys.exit(0 if isinstance(arr, list) and len(arr) > 0 else 1)
         _yci_test_report PASS "$name"
     else
         _yci_test_report FAIL "$name" "field '$field' is empty or missing"
-    fi
-}
-
-assert_json_contains_item() {
-    # Assert a JSON top-level array field contains an item where key==value.
-    # Usage: assert_json_contains_item <json_str> <array_field> <item_key> <item_value> <name>
-    local json_str="$1" field="$2" key="$3" value="$4" name="${5:-assert_json_contains_item}"
-    if python3 -c "
-import json, sys
-d = json.loads(sys.argv[1])
-arr = d.get(sys.argv[2], [])
-found = any(str(item.get(sys.argv[3], '')) == sys.argv[4] for item in arr if isinstance(item, dict))
-sys.exit(0 if found else 1)
-" "$json_str" "$field" "$key" "$value" >/dev/null 2>&1; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "array '$field' has no item where $key='$value'"
     fi
 }
 

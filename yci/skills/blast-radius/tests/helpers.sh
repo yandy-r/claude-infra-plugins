@@ -82,39 +82,6 @@ assert_exit() {
     fi
 }
 
-assert_file_exists() {
-    local path="$1" name="${2:-assert_file_exists}"
-    if [ -f "$path" ]; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "file not found: $path"
-    fi
-}
-
-assert_json_valid() {
-    local input="$1" name="${2:-assert_json_valid}"
-    if python3 -c "import json,sys; json.loads(sys.argv[1])" "$input" 2>/dev/null; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "invalid JSON"
-    fi
-}
-
-assert_json_eq() {
-    # Deep-equal two JSON strings using python3.
-    local got="$1" expected="$2" name="${3:-assert_json_eq}"
-    if python3 -c "
-import json, sys
-a = json.loads(sys.argv[1])
-b = json.loads(sys.argv[2])
-sys.exit(0 if a == b else 1)
-" "$got" "$expected" >/dev/null 2>&1; then
-        _yci_test_report PASS "$name"
-    else
-        _yci_test_report FAIL "$name" "JSON objects not equal"
-    fi
-}
-
 assert_json_field() {
     # Assert that a JSON string has a top-level field with a specific value.
     # Usage: assert_json_field <json_str> <field> <expected_value> <test_name>
