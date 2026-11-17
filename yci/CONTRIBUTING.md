@@ -601,6 +601,6 @@ Contributors MUST NOT:
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — Repo-level contributing guide: GitHub workflow, issue
   templates, PR process, commit conventions, and label taxonomy.
 - [`yci/docs/profiles.md`](docs/profiles.md) — Full documentation of the `~/.config/yci/` data-root
-  layout, profile YAML schema, and per-customer override fields.-
-  [`docs/prps/prds/yci.prd.md`](../docs/prps/prds/yci.prd.md) — The authoritative PRD. All design
+  layout, profile YAML schema, and per-customer override fields.
+- [`docs/prps/prds/yci.prd.md`](../docs/prps/prds/yci.prd.md) — The authoritative PRD. All design
   decisions, defaults, non-goals, and the phased rollout plan are locked here as of 2026-04-20.
