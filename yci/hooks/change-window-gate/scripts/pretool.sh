@@ -29,30 +29,14 @@ set -uo pipefail  # intentionally no -e — aggregates decision logic
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "${SCRIPT_DIR}/../../.." && pwd -P)}"
 
-# ---------------------------------------------------------------------------
-# 1. Read stdin payload
-# ---------------------------------------------------------------------------
-
 payload="$(cat)"
-
-# ---------------------------------------------------------------------------
-# 2. Short-circuit on YCI_CWG_OVERRIDE=1
-# ---------------------------------------------------------------------------
 
 if [[ "${YCI_CWG_OVERRIDE:-}" == "1" ]]; then
     exit 0
 fi
 
-# ---------------------------------------------------------------------------
-# 3. Extract tool_name and tool_input from payload
-# ---------------------------------------------------------------------------
-
 tool_name="$(python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(d.get("tool_name",""))' <<< "$payload")"
 tool_input="$(python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(json.dumps(d.get("tool_input",{})))' <<< "$payload")"
-
-# ---------------------------------------------------------------------------
-# 4. Resolve data root
-# ---------------------------------------------------------------------------
 
 # shellcheck source=../../../skills/_shared/scripts/resolve-data-root.sh
 source "${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/resolve-data-root.sh"
@@ -62,9 +46,7 @@ if [[ "$data_root_rc" -ne 0 ]]; then
     data_root="${YCI_DATA_ROOT:-${HOME}/.config/yci}"
 fi
 
-# ---------------------------------------------------------------------------
-# 5. Resolve active customer (subprocess — resolve-customer.sh is standalone)
-# ---------------------------------------------------------------------------
+# resolve-customer.sh is standalone, so it runs as a subprocess.
 
 RESOLVE="${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/resolve-customer.sh"
 active_customer=""; resolve_rc=0
@@ -73,10 +55,6 @@ if [[ "$resolve_rc" -ne 0 ]]; then
     active_customer=""
 fi
 active_customer="$(printf '%s' "$active_customer" | tr -d '[:space:]')"
-
-# ---------------------------------------------------------------------------
-# 6. No active customer — purpose-classify and decide
-# ---------------------------------------------------------------------------
 
 if [[ -z "$active_customer" ]]; then
     case "$tool_name" in
@@ -114,19 +92,13 @@ if [[ -z "$active_customer" ]]; then
     exit 0
 fi
 
-# ---------------------------------------------------------------------------
-# 7. Active customer: classify destructive — allow reads/queries
-# ---------------------------------------------------------------------------
-
 # shellcheck source=./destructive-classifier.sh
 source "${SCRIPT_DIR}/destructive-classifier.sh"
 if ! cwg_is_destructive "$tool_name" "$tool_input"; then
     exit 0
 fi
 
-# ---------------------------------------------------------------------------
-# 8. Load profile JSON (subprocess — load-profile.sh is standalone)
-# ---------------------------------------------------------------------------
+# load-profile.sh is standalone, so it runs as a subprocess.
 
 LOAD_PROFILE="${CLAUDE_PLUGIN_ROOT}/skills/customer-profile/scripts/load-profile.sh"
 profile_json_path="$(mktemp)"
@@ -141,19 +113,11 @@ if [[ "$load_rc" -ne 0 ]]; then
     exit 0
 fi
 
-# ---------------------------------------------------------------------------
-# 9. Delegate to window-decision
-# ---------------------------------------------------------------------------
-
 # shellcheck source=./window-decision.sh
 source "${SCRIPT_DIR}/window-decision.sh"
 decision_json="$(cwg_decide "$profile_json_path")"
 decision="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["decision"])' <<< "$decision_json")"
 rationale="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["rationale"])' <<< "$decision_json")"
-
-# ---------------------------------------------------------------------------
-# 10. Dispatch on decision
-# ---------------------------------------------------------------------------
 
 case "$decision" in
     allowed)

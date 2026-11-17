@@ -30,7 +30,7 @@ without inspecting the directory path.
 
 ## Redaction rules
 
-**Exempt.** This adapter does NOT ship a `redaction.rules` file. No automatic redaction is applied
+**Exempt.** This adapter does NOT ship a `*-redaction.rules` file. No automatic redaction is applied
 to content produced under the `none` regime. Operators using `none` are responsible for any
 scrubbing required before sharing content outside the homelab. See
 `yci/CONTRIBUTING.md § What Every Adapter Should Ship` for the exemption entry.
@@ -56,7 +56,7 @@ confirm a follow-up plan if scope unexpectedly expands to a real customer.
 - The loader resolves `regime: none` in a customer profile to this adapter directory. No further
   configuration is required.
 - Schema and redaction are exempt by design, not by oversight. The absence of `evidence-schema.json`
-  and `redaction.rules` is load-bearing: the loader uses it as the canonical signal to skip
+  and `*-redaction.rules` is load-bearing: the loader uses it as the canonical signal to skip
   validation for this regime.
 - The `_internal` stock profile (`yci/docs/profiles/_internal.yaml.example`) defaults to
   `compliance.regime: none`. This adapter is its backing implementation.

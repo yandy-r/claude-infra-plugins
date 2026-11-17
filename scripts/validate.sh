@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
-# validate-yci-skills.sh — yci skill validator
-#
-# Checks:
-#   1. yci/.claude-plugin/plugin.json exists and parses as valid JSON.
-#   2. yci/skills/customer-profile — full surface validation.
-#   3. yci/skills/_shared/telemetry-sanitizer — sanitizer + tests.
+# validate.sh — single CI entrypoint; see CLAUDE.md § Testing Changes.
 #
 # Intentional: no -e flag; validator must aggregate failures.
 set -uo pipefail

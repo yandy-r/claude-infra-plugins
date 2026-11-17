@@ -43,8 +43,8 @@ claude-infra-plugins/
 │   │       ├── references/
 │   │       ├── scripts/
 │   │       └── tests/
-│   ├── agents/               # (Phase 1+)
-│   ├── commands/             # (Phase 1+)
+│   ├── agents/
+│   ├── commands/
 │   └── docs/
 └── docs/
     └── prps/
@@ -98,11 +98,11 @@ Skills source them via `${CLAUDE_PLUGIN_ROOT}/skills/_shared/scripts/{name}.sh`.
 
 ### Adapter patterns
 
-yci uses dispatcher-per-adapter tables for inventory, compliance, and (Phase 2+) change-window
-enforcement. Each adapter is a directory under
-`yci/skills/_shared/<category>-adapters/<adapter-name>/` with `ADAPTER.md` + `scripts/check.sh` (or
-equivalent). A shared `load-<category>-adapter.sh` in `yci/skills/_shared/scripts/` dispatches. See
-`yci/CONTRIBUTING.md` and the PRD §5.4 for the canonical pattern.
+yci uses dispatcher-per-adapter tables for inventory, compliance, and change-window enforcement.
+Each adapter is a directory under `yci/skills/_shared/<category>-adapters/<adapter-name>/` with
+`ADAPTER.md` + `scripts/check.sh` (or equivalent). A shared `load-<category>-adapter.sh` in
+`yci/skills/_shared/scripts/` dispatches. See `yci/CONTRIBUTING.md` and the PRD §5.4 for the
+canonical pattern.
 
 ### Registration
 
