@@ -3,10 +3,8 @@
 `yci` is the consulting/systems-integration sibling of `ycc`. Where `ycc` owns the dev-focused
 workflow, `yci` owns the consulting-engagement workflow: load a customer profile, work inside that
 profile's guardrails, produce customer-ready deliverables, hand off cleanly, and switch profiles
-without leakage. Phase 0 is mechanical scaffolding only — it proves the plugin pipeline and
-documents the invariants. Behavioral artifacts (hooks, compliance adapters, real workflow skills,
-evidence bundles, MOP generators) land in later phases. The binding reference for all design
-decisions is [`docs/prps/prds/yci.prd.md`](../docs/prps/prds/yci.prd.md).
+without leakage. The binding reference for all design decisions is
+[`docs/prps/prds/yci.prd.md`](../docs/prps/prds/yci.prd.md).
 
 ---
 
@@ -227,9 +225,9 @@ both are present or neither is.
    `ADAPTER.md` — explain why it is exempt and what the operator loses by not having a schema or
    redaction rules.
 
-6. **Extend the validator** in `scripts/validate-yci-skills.sh :: validate_compliance_adapters` if
-   the new regime requires a regime-specific structural check beyond the contract already enforced
-   for all adapters. Most new regimes will not need this step.
+6. **Extend the validator** in `scripts/validate.sh :: validate_compliance_adapters` if the new
+   regime requires a regime-specific structural check beyond the contract already enforced for all
+   adapters. Most new regimes will not need this step.
 
 7. **Update the "Baseline adapters shipped in Phase 1" section** above to include the new regime and
    a one-sentence description so the list stays current.
@@ -576,27 +574,7 @@ For the full data-root layout and per-customer override reference, see
 
 ---
 
-## Phase Discipline
-
-Phase 0 is scaffolding only. The deliverables for Phase 0 are:
-
-- The `yci/` plugin directory and `plugin.json`.
-- A second entry in `.claude-plugin/marketplace.json`.
-- Empty `yci/hooks/`, `yci/skills/`, `yci/agents/`, `yci/commands/` placeholders.
-- This `CONTRIBUTING.md`.
-- Generator and validator script support for the `yci` plugin alongside `ycc`.
-- A trivial `yci:hello` skill to prove the pipeline end-to-end.
-- `yci/docs/profiles.md` documenting the `~/.config/yci/` layout.
-- CI builds and validates both plugins.
-
-Work that is not on that list — hooks, compliance adapters, real workflow skills, evidence bundles,
-MOP generators, agents, change-window adapters — waits for an explicit phase kickoff per the PRD
-roadmap. The artifact set for each phase is defined in PRD §6. The phased rollout plan is in PRD §9.
-
-Adding a hook, adapter, or skill to Phase 0 is a scope defect, not a contribution. Open an issue and
-target the appropriate later phase instead.
-
-### Guard-hook discipline
+## Guard-hook discipline
 
 The `yci` customer-guard PreToolUse hook (`yci/hooks/customer-guard/`) is a load-bearing security
 control. Operator-facing setup and false-positive triage are documented in
@@ -623,7 +601,6 @@ Contributors MUST NOT:
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — Repo-level contributing guide: GitHub workflow, issue
   templates, PR process, commit conventions, and label taxonomy.
 - [`yci/docs/profiles.md`](docs/profiles.md) — Full documentation of the `~/.config/yci/` data-root
-  layout, profile YAML schema, and per-customer override fields. (Populated in Phase 0; linked here
-  as a forward reference.)
+  layout, profile YAML schema, and per-customer override fields.
 - [`docs/prps/prds/yci.prd.md`](../docs/prps/prds/yci.prd.md) — The authoritative PRD. All design
   decisions, defaults, non-goals, and the phased rollout plan are locked here as of 2026-04-20.

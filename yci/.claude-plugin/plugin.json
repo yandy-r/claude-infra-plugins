@@ -1,7 +1,7 @@
 {
   "name": "yci",
-  "version": "0.1.0",
-  "description": "Yandy's Claude Infrastructure toolkit — consulting / systems-integration workflows. Phase 0 scaffolding.",
+  "version": "0.2.0",
+  "description": "Yandy's Claude Infrastructure toolkit — consulting / systems-integration workflows.",
   "author": {
     "name": "yandy-r"
   },

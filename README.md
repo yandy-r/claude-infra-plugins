@@ -20,8 +20,8 @@ engagements.
   collisions. Catalogued deny reasons; dry-run and fail-open env knobs for development.
 - **Adapter patterns** — inventory (netbox stub), compliance (HIPAA / PCI / SOC2 / none),
   change-window (iCal / JSON-schedule / always-open / none). All under `yci/skills/_shared/`.
-- **Planned** (Phase 2+): `yci:blast-radius`, `yci:evidence-bundle`, `yci:network-change-review`,
-  `yci:change-window-gate` hook — see [PRD §6](docs/prps/prds/yci.prd.md#6-phased-rollout) for the
+- **Also shipped**: `yci:blast-radius`, `yci:evidence-bundle`, `yci:network-change-review`, and the
+  `change-window-gate` hook — see [PRD §6](docs/prps/prds/yci.prd.md#6-phased-rollout) for the
   phased rollout.
 
 ## Installation
@@ -68,8 +68,8 @@ claude-infra-plugins/
 │   │   ├── _shared/          # cross-skill helpers (customer-isolation, adapters, schema)
 │   │   ├── customer-profile/ # load / switch / init profiles
 │   │   └── customer-guard/   # guard-check operator skill
-│   ├── agents/               # (Phase 1+)
-│   ├── commands/             # (Phase 1+)
+│   ├── agents/
+│   ├── commands/
 │   └── docs/
 │       ├── profiles.md
 │       └── profiles/_internal.yaml.example
@@ -168,8 +168,8 @@ pair it with `--no-autofix` to skip the autofix workflow.
 
 ### Pre-commit hook (optional)
 
-A pre-commit hook is installed. It runs `./scripts/style.sh lint --modified --fix` before every
-commit. To bypass once: `git commit --no-verify`.
+A pre-commit hook is installed. It runs `./scripts/style.sh lint --staged --fix` and
+`./scripts/style.sh format --staged` before every commit. To bypass once: `git commit --no-verify`.
 
 ### Advanced
 

@@ -6,7 +6,7 @@ Tick each item or record an explicit waiver comment explaining why it does not a
 - [ ] No cross-customer references: search the evidence body for other customer IDs, slugs,
       hostnames, IP ranges, SOW numbers, or project codes that belong to a different engagement.
 - [ ] Redaction rules applied: secrets, private keys, RFC1918/link-local IP addresses, and internal
-      hostnames have been scrubbed per `redaction.rules`.
+      hostnames have been scrubbed per `generic-redaction.rules`.
 - [ ] Customer branding applied per engagement profile (header, logo, footer match the active
       profile's `deliverable.header_template`) — OR note "intentionally unbranded" with reviewer
       sign-off if branding is not required for this deliverable type.

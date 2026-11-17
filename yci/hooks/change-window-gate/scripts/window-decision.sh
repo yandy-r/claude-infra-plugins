@@ -15,7 +15,7 @@
 # ---------------------------------------------------------------------------
 # Resolve CLAUDE_PLUGIN_ROOT at source/load time.
 # At runtime the harness sets CLAUDE_PLUGIN_ROOT; when invoked directly from
-# the CLI we derive it: two levels up from yci/hooks/change-window-gate/scripts/
+# the CLI we derive it: three levels up from yci/hooks/change-window-gate/scripts/
 # lands at yci/.
 # ---------------------------------------------------------------------------
 CWG_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -56,17 +56,11 @@ cwg_decide() {
         ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     fi
 
-    # ------------------------------------------------------------------
-    # Step 1: YCI_CWG_OVERRIDE short-circuit.
-    # ------------------------------------------------------------------
     if [[ "${YCI_CWG_OVERRIDE:-}" == "1" ]]; then
         printf '%s\n' '{"decision":"allowed","rationale":"YCI_CWG_OVERRIDE=1 acknowledged","adapter":"override","window_source":null}'
         return 0
     fi
 
-    # ------------------------------------------------------------------
-    # Step 2: Resolve adapter via dispatcher; write to a temp env file.
-    # ------------------------------------------------------------------
     local tmp_env
     tmp_env="$(mktemp /tmp/cwg-$$.XXXXXX.env)"
     # Clean up temp file on function exit regardless of success/failure.
@@ -95,10 +89,6 @@ cwg_decide() {
     rm -f "$tmp_env"
     trap - RETURN
 
-    # ------------------------------------------------------------------
-    # Step 3: Extract change_window.source and change_window.timezone
-    #         from the profile JSON.
-    # ------------------------------------------------------------------
     local cw_fields source tz
     if ! cw_fields="$(python3 -c '
 import json, sys, pathlib
@@ -117,9 +107,6 @@ print(cw.get("timezone") or "UTC")
     source="$(printf '%s\n' "$cw_fields" | sed -n '1p')"
     tz="$(printf '%s\n' "$cw_fields" | sed -n '2p')"
 
-    # ------------------------------------------------------------------
-    # Step 4: Invoke the adapter's check.sh.
-    # ------------------------------------------------------------------
     local adapter_stdout adapter_stderr adapter_rc
 
     # Capture stdout and stderr separately; avoid set -e killing us on non-zero.
@@ -137,9 +124,6 @@ print(cw.get("timezone") or "UTC")
     adapter_stderr="$(< "$adapter_err_file")"
     rm -f "$adapter_out_file" "$adapter_err_file"
 
-    # ------------------------------------------------------------------
-    # Step 5: Validate adapter output.
-    # ------------------------------------------------------------------
     if [[ "$adapter_rc" -eq 0 ]] && [[ -n "$adapter_stdout" ]]; then
         local validate_result
         if validate_result="$(printf '%s\n' "$adapter_stdout" | python3 -c '

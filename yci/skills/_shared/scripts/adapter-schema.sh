@@ -4,7 +4,7 @@
 # Sourceable library — DO NOT set -euo pipefail at file scope.
 # Read by:
 #   - yci/skills/_shared/scripts/load-compliance-adapter.sh   (runtime loader)
-#   - scripts/validate-yci-skills.sh                          (structural validator)
+#   - scripts/validate.sh                                     (structural validator)
 #
 # The contract itself is documented in yci/CONTRIBUTING.md § "What Every Adapter Should Ship".
 # This file is the machine-readable mirror of that prose contract — keep them in sync.

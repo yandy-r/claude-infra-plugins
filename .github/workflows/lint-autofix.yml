@@ -48,10 +48,6 @@ jobs:
         # Match the .tool-versions pin; apt-installed shellcheck diverges.
         run: ./scripts/install-shellcheck.sh
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
       - name: Apply formatters
         # Same languages as lint.yml and the package.json format script. Without the flags,
         # style.sh also runs an unpinned Biome over Markdown and YAML, which rewrites skill front matter.
